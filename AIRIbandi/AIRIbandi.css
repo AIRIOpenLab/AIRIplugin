@@ -1,0 +1,30 @@
+.nomePaese
+	{
+	padding:0.4em; 
+	border: 1px dotted gray;
+	margin-right: 5px;
+	cursor: pointer;
+	}
+	
+.PaeseCloseButton
+	{
+	background: rgb(250, 120, 50);
+	color: white;
+	font-size: 0.8em;
+	font-weight: bold;
+	margin: 0.5em;
+	padding: 0.2em 0.5em;
+	}
+
+#nomipaesi
+	{
+	margin-top: 1em;
+	margin-bottom: 1em;
+	}
+	
+#lista-destinatari-search,
+#lista-paesi-search
+	{
+	padding: 0.3em;
+	margin: 0.2em;
+	}
