@@ -1,9 +1,11 @@
 <?php
 /**
  * Plugin Name: AIRIsoci
+ * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Plugin per la gestione dei soci di AIRIcerca.
- * Version: 0.1.0
+ * Version: 0.1.1
  * Author: Nicola Romanò
+ * Author URI: https://github.com/nicolaromano
  * License: GPL2
  */
  
@@ -39,6 +41,7 @@ function as_load_custom_scripts()
 		wp_enqueue_style('DataTablesCSS', 'http://cdn.datatables.net/1.10.7/css/jquery.dataTables.css');
 		wp_enqueue_script('DataTables', 'http://cdn.datatables.net/1.10.7/js/jquery.dataTables.js', array("jquery"), '1', true);
 		wp_enqueue_script('initDataTable', plugins_url('gestione-soci.js', __FILE__ ), array("jquery"), '1', true);
+		wp_localize_script('initDataTable', 'DataTablesLoadData', array('ajaxURL' => admin_url('admin-ajax.php')));
 		}
 
 /*	if ($page_ID == 3355 || $page_ID == 3480) // Pagina iscrizione soci + amici
@@ -54,6 +57,7 @@ function as_load_custom_scripts()
 		{
 		wp_enqueue_script('GoogleAPI', 'https://www.google.com/jsapi', '1', array(), '1', true);
 		wp_enqueue_script('initStats', plugins_url('statistiche-soci.js', __FILE__ ), array("jquery"), '1', true);
+		wp_localize_script('initStats', 'DataTablesLoadData', array('ajaxURL' => admin_url('admin-ajax.php')));
 		}*/
 	}
 

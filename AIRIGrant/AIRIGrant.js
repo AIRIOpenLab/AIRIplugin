@@ -22,7 +22,7 @@ function grantReady()
 		{
 		$("#username").autocomplete(
 			{
-			serviceUrl: 'http://www.airicerca.org/wp-admin/admin-ajax.php',
+			serviceUrl: DataTablesLoadData.ajaxURL,
 			type: 'POST',
 			params: {action:'AIRIGrant_get_user'}
 			});
@@ -35,7 +35,7 @@ function grantReady()
 				{
 				$.ajax({
 					type:"POST",
-					url: "http://www.airicerca.org/wp-admin/admin-ajax.php",
+					url: DataTablesLoadData.ajaxURL,
 					data: {
 						action: "AIRIGrant_rem_revisore",
 						id: tokens[2]
@@ -59,7 +59,7 @@ function grantReady()
 			
 			$.ajax({
 				type:"POST",
-				url: "http://www.airicerca.org/wp-admin/admin-ajax.php",
+				url: DataTablesLoadData.ajaxURL,
 				data: {
 					action: "AIRIGrant_add_revisore",
 					id: parseInt(tokens[1]),

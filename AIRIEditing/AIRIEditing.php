@@ -1,9 +1,11 @@
 <?php
 /**
  * Plugin Name: AIRIEditing
+ * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Shortcodes per AIRIEditing.
  * Version: 1.0.0
  * Author: Nicola Romanò
+ * Author URI: https://github.com/nicolaromano
  * License: GPL3
  */
  

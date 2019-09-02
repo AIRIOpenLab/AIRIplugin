@@ -1,9 +1,11 @@
 <?php
 /**
  * Plugin Name: AIRIPortal
+ * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Plugin per la gestione della homepage.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Nicola Romanò
+ * Author URI: https://github.com/nicolaromano
  * License: GPL3
  */
  
@@ -34,6 +36,7 @@ function AIRIPortal_load_custom_scripts()
 		{
 		wp_enqueue_style('AIRIPortalCSS', plugins_url('AIRIPortal.css', __FILE__ ));
 		wp_enqueue_script('initPage', plugins_url('AIRIPortal.js', __FILE__), array("jquery"), '1', true);
+		wp_localize_script('initPage', 'DataTablesLoadData', array('ajaxURL' => admin_url('admin-ajax.php')));
 		}
 	}
 

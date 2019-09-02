@@ -193,7 +193,7 @@ function gestioneReady()
 						{
 						$.ajax({
 							type:"POST",
-							url: "http://www.airicerca.org/wp-admin/admin-ajax.php",
+							url: DataTablesLoadData.ajaxURL,
 							data: {
 								action: "act_rem_user",
 								id: tokens[2]
@@ -215,7 +215,7 @@ function gestioneReady()
 					$(this).prop("disabled", true)
 					$.ajax({
 						type:"POST",
-						url: "http://www.airicerca.org/wp-admin/admin-ajax.php",
+						url: DataTablesLoadData.ajaxURL,
 						data: {
 							action: "act_approve_user",
 							id: tokens[2]

@@ -1,9 +1,11 @@
 <?php
 /**
  * Plugin Name: AIRIGrant
+ * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Plugin per le pagine di AIRIGrant.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Nicola Romanò
+ * Author URI: https://github.com/nicolaromano
  * License: GPL3
  */
  
@@ -35,6 +37,7 @@ function AIRIGrant_load_custom_scripts()
 		wp_enqueue_style('AIRIGrantCSS', plugins_url('AIRIGrant.css', __FILE__ ));
 		wp_enqueue_script('autocomplete', plugins_url('jquery.autocomplete.js', __FILE__), array("jquery"), '1', true);
 		wp_enqueue_script('initPage', plugins_url('AIRIGrant.js', __FILE__), array("jquery"), '1', true);
+		wp_localize_script('initPage', 'DataTablesLoadData', array('ajaxURL' => admin_url('admin-ajax.php')));
 		}
 	}
 

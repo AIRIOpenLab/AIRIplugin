@@ -157,7 +157,7 @@ function bandiReady()
 						$.ajax({
 							type: "POST",
 							dataType: "json",
-							url: "http://www.airicerca.org/wp-admin/admin-ajax.php",
+							url: DataTablesLoadData.ajaxURL,
 							data: {
 								action: "act_getPaesi"
 								},

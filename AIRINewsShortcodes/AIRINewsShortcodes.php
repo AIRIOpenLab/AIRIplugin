@@ -1,9 +1,11 @@
 <?php
 /**
  * Plugin Name: AIRINewsShortcodes
+ * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Shortcodes per le news aggiungere la firma nelle pagine delle news.
  * Version: 1.0.0
  * Author: Nicola Romanò
+ * Author URI: https://github.com/nicolaromano
  * License: GPL2
  */
  

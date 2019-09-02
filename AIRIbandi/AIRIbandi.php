@@ -1,9 +1,11 @@
 <?php
 /**
  * Plugin Name: AIRIbandi
+ * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Plugin per la gestione della sezione bandi.
- * Version: 0.1.0
+ * Version: 0.1.1
  * Author: Nicola Romanò
+ * Author URI: https://github.com/nicolaromano
  * License: GPL2
  */
  
@@ -43,7 +45,7 @@ function AIRIbandi_load_custom_scripts()
 		wp_enqueue_style('AIRIbandiCSS', plugins_url('AIRIbandi.css', __FILE__ ));
 		wp_enqueue_script('countrySelector', plugins_url('jquery.select-to-autocomplete.js', __FILE__ ), array("jquery", "jquery-ui-autocomplete"), '1', true);
 		wp_enqueue_script('initPage', plugins_url('AIRIbandi-insert.js', __FILE__), array("jquery"), '1', true);
-		wp_localize_script('initPage', 'scriptVars', array('flagsURL' => content_url()."/media/flags/"));
+		wp_localize_script('initPage', 'scriptVars', array('ajaxURL' => admin_url('admin-ajax.php'), 'flagsURL' => content_url()."/media/flags/"));
 		}
 	}
 

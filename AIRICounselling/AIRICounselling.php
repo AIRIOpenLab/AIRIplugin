@@ -1,9 +1,11 @@
 <?php
 /**
  * Plugin Name: AIRICounselling
+ * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Plugin per le pagine di AIRICounselling.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Nicola Romanò
+ * Author URI: https://github.com/nicolaromano
  * License: GPL3
  */
  
@@ -34,6 +36,8 @@ function AIRICounselling_load_custom_scripts()
 		{
 		wp_enqueue_script('google-maps', "https://maps.googleapis.com/maps/api/js?key=AIzaSyAxGjIy_2bHfeL8RTIEYP29343bbEhZIJk");
 		wp_enqueue_script('initPage', plugins_url('AIRICounselling.js', __FILE__), array("jquery", "google-maps"), '1', true);
+		
+		wp_localize_script('initPage', 'DataTablesLoadData', array('ajaxURL' => admin_url('admin-ajax.php')));
 		}
 	}
 

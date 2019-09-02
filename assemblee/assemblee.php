@@ -1,9 +1,11 @@
 <?php
 /**
  * Plugin Name: assemblee
+ * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Plugin per la gestione delle assemblee dell'associazione.
  * Version: 1.0.0
  * Author: Nicola Romanò
+ * Author URI: https://github.com/nicolaromano
  * License: GPL2
  */
  

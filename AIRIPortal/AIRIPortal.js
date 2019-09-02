@@ -43,7 +43,7 @@ function portalReady()
 		$.ajax({
 			type: "POST",
 			dataType: "json",
-			url: "http://www.airicerca.org/wp-admin/admin-ajax.php",
+			url: DataTablesLoadData.ajaxURL,
 			data: {
 				action: "AIRInforma_get_latest"
 				},
@@ -79,7 +79,7 @@ function portalReady()
 		$.ajax({
 			type: "POST",
 			dataType: "json",
-			url: "http://www.airicerca.org/wp-admin/admin-ajax.php",
+			url: DataTablesLoadData.ajaxURL,
 			data: {
 				action: "AIRISocial_get_latest"
 				},

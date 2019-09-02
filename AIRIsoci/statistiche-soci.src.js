@@ -42,7 +42,7 @@ function drawChart()
 		{
 		$.ajax({
 			type:"POST",
-			url: "http://www.airicerca.org/wp-admin/admin-ajax.php",
+			url: DataTablesLoadData.ajaxURL,
 			data: {
 				action: "act_stats"
 				},

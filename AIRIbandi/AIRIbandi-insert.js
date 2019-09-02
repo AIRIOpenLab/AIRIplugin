@@ -23,7 +23,7 @@ function bandiInsertReady()
 		$.ajax({
 			type: "POST",
 			dataType: "json",
-			url: "http://www.airicerca.org/wp-admin/admin-ajax.php",
+			url: scriptVars.ajaxURL,
 			data: {
 				action: "act_getPaesi",
 				all: 1

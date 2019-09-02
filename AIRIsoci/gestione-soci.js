@@ -200,7 +200,7 @@ function gestioneReady()
 						{
 						$.ajax({
 							type:"POST",
-							url: "https://www.airicerca.org/wp-admin/admin-ajax.php",
+							url: DataTablesLoadData.ajaxURL,
 							data: {
 								action: "act_rem_user",
 								id: tokens[2]
@@ -222,7 +222,7 @@ function gestioneReady()
 					row.child.hide();
 					$.ajax({
 						type:"POST",
-						url: "https://www.airicerca.org/wp-admin/admin-ajax.php",
+						url: DataTablesLoadData.ajaxURL,
 						data: {
 							action: "act_approve_user",
 							id: tokens[2]
@@ -250,7 +250,7 @@ function gestioneReady()
 					row.child.hide();
 					$.ajax({
 						type:"POST",
-						url: "https://www.airicerca.org/wp-admin/admin-ajax.php",
+						url: DataTablesLoadData.ajaxURL,
 						data: {
 							action: "act_renew_user",
 							id: tokens[2]
