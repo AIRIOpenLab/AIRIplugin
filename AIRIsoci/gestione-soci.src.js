@@ -34,7 +34,8 @@ function gestioneReady()
 		candidatura: 10,
 		affiliazione: 11,
 		ricercatore: 12,
-		registrazione: 13
+		registrazione: 13,
+		rinnovato: 14
 		};
 		
 	var colors = {
@@ -110,15 +111,22 @@ function gestioneReady()
 			
 			txt += "<button id='delete_user_"+data[tbCol.id]+"' style='background-color:red; padding:0.6em;'>Cancella utente</button>";
 			if (data[tbCol.tessera] == "Non generato")
+				{
 				txt += "<button id='confirm_user_"+data[tbCol.id]+"' style='background-color:green; padding:0.6em;'>Conferma utente</button>";
+				}
+			else if (data[tbCol.rinnovato] == "X")
+				{
+				txt += "<button id='renew_user_"+data[tbCol.id]+"' style='background-color:green; padding:0.6em;'>Rinnova utente</button>";
+				}
+				
 			return txt;
 			}
 
 		table = $('#subscribers-table').DataTable({
-			"language" : {"url": "http://cdn.datatables.net/plug-ins/f2c75b7247b/i18n/Italian.json"},
+			"language" : {"url": "https://cdn.datatables.net/plug-ins/f2c75b7247b/i18n/Italian.json"},
 			"pageLength" : 30,
 			"lengthMenu": [10, 30, 100],
-			"order": [[1, "asc"]],
+			"order": [[tbCol.id, "desc"]],
 			"fnRowCallback": function(nRow, aData, iDisplayIndex, iDisplayIndexFull) 
 					{
 					$(nRow).css('cursor', 'pointer');
@@ -160,8 +168,7 @@ function gestioneReady()
 				{
 				"targets": [tbCol.ricercatore],
 				"visible": false
-				},
-				{
+				}],
 			"responsive": {
 				details:
 					{
@@ -211,8 +218,8 @@ function gestioneReady()
 					});
 					
 				$("[id^=confirm_user_]").click(function(){
-					tokens = this.id.split("_");
-					$(this).prop("disabled", true)
+					tokens = this.id.split("_");					
+					row.child.hide();
 					$.ajax({
 						type:"POST",
 						url: DataTablesLoadData.ajaxURL,
@@ -222,11 +229,11 @@ function gestioneReady()
 							},
 						success : function(res)
 							{
-							$(this).prop("disabled", false)
-							$('#subscribers-table').DataTable().draw(false);
-					
 							var oTable = $('#subscribers-table').dataTable();
-					
+							tr.css('background-color', colors.socio);
+							oTable.fnUpdate('1' , $('tr#row_'+tokens[2])[0], tbCol.approvato);					
+							oTable.fnUpdate('Codice generato' , $('tr#row_'+tokens[2])[0], tbCol.tessera);					
+							$('#subscribers-table').DataTable().draw(false);
 							},
 						error: function(xhr, ajaxOptions, thrownError)
 							{
@@ -235,6 +242,32 @@ function gestioneReady()
 							}
 						});
 					});
+					
+				$("[id^=renew_user_]").click(function(){
+					tokens = this.id.split("_");					
+					var oTable = $('#subscribers-table').dataTable();
+					oTable.fnUpdate('&#10004;', $('tr#row_'+tokens[2])[0], tbCol.rinnovato);					
+					row.child.hide();
+					$.ajax({
+						type:"POST",
+						url: DataTablesLoadData.ajaxURL,
+						data: {
+							action: "act_renew_user",
+							id: tokens[2]
+							},
+						success : function(res)
+							{				
+							$('#subscribers-table').DataTable().draw(false);
+							},
+						error: function(xhr, ajaxOptions, thrownError)
+							{
+							$(this).prop("disabled", false)
+							alert("ERRORE: " + thrownError + " - Status: " + xhr.status);
+							var oTable = $('#subscribers-table').dataTable();
+							oTable.fnUpdate('X', $('tr#row_'+tokens[2])[0], tbCol.rinnovato);					
+							}
+						});
+					});					
 				}
 			});
 

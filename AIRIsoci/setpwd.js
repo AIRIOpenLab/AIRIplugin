@@ -1,1 +1,0 @@
-function checkPwd(){return $=jQuery,$("#newpassword").val()!=$("#newpassword-repeat").val()?($("#err-pwd").css("display",""),!1):void $("#err-pwd").css("display","none")}function checkData(){jQuery(function(e){e("#newpassword-repeat").blur(checkPwd),e("#choose-pwd").submit(checkPwd)})}jQuery(document).ready(checkData);
