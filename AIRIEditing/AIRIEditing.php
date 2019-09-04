@@ -45,19 +45,29 @@ function ae_load_custom_scripts()
 
 add_action('wp_enqueue_scripts', 'ae_load_custom_scripts');
 
-$editors = array("Susanna Grazzini", "Sivia Licciulli", "Anna Napolitano", "Valentina Petrolini", "Giulia Petrovich",
-                 "Giovanna Piazzese", "Hartmut Pohl", "Mariano Maffei", "Carlo Rindi Nuzzolo", "Stgilesmedical");
-$editorslugs = array("susannagrazzini", "silvialicciulli", "annanapolitano", "valentinapetrolini", "giuliapetrovich",
-                     "giovannapiazzese", "hartmutpohl", "marianomaffei", "carlorindinuzzolo", "stgilesmedical");
-$editoremails = array("susanna.grazzini@gmail.com", "slicciulli@gmail.com", "anna-napolitano@hotmail.it", "hegel.eva@gmail.com",
-                      "contact@editando-services.com", "emailpiazzese@gmail.com", "Hartmut.Pohl@8knut.de", "mariano.maffei@embl.it",
-                      "rindi.carlo@gmail.com", "steven.walker@stgmed.com");
+$editors = array();
+$editorslugs = array();
+$editoremails = array();
+
+//Apriamo il file CSV con gli editori.
+$fileHandle = fopen($PLUGIN_BASE."/editori.csv", "r");
+
+//Loop.
+while (($row = fgetcsv($fileHandle, 0, ",", '"')) !== FALSE) {
+    array_push($editors, $row[0]);
+    array_push($editorslugs, $row[1]);
+    array_push($editoremails, $row[2]);
+}
+
+fclose($fileHandle);
+
+
 
 /******************* SHORTCODES *******************/
 // [AIRIEditing-contact-form]
 function ae_contact()
 	{
-        global $editors, $editorslugs, $editoremails;
+        global $editors, $editorslugs, $editoremails, $PLUGIN_BASE;
 
         if (isset($_POST['firstname']))
            {
@@ -155,7 +165,11 @@ function ae_contact()
                $sel = '';
             $txt .= '<option value="'.$editorslugs[$i].'" '.$sel.'>'.$editors[$i].'</option>';
             }
-                  
+                 
+        $f = fopen($PLUGIN_BASE."/recaptcha.txt", "r");
+        $secret = trim(fgets($f));
+        fclose($f);
+            
         $txt .= '</select></td>
                 </tr>
                 <tr>
@@ -164,7 +178,7 @@ function ae_contact()
                 </tr>
                 <tr>
                 <td colspan="2">
-                <div class="g-recaptcha" align = "center" style="margin:auto" data-sitekey="6LfXiAMTAAAAAPjD7lpymcqLACCehoJguTiWeDzu"></div>
+                <div class="g-recaptcha" align = "center" style="margin:auto" data-sitekey="'.$secret.'"></div>
                 </td>
                 </tr>
                 </tbody>
@@ -184,7 +198,7 @@ Gli editor assicurano di aver messo in atto misure di sicurezza per la salvaguar
 // [AIRIEditing-contact-form-en]
 function ae_contact_en()
 	{
-        global $editors, $editorslugs, $editoremails;
+        global $editors, $editorslugs, $editoremails, $PLUGIN_BASE;
 
         if (isset($_POST['firstname']))
            {
@@ -283,7 +297,11 @@ function ae_contact_en()
                $sel = '';
             $txt .= '<option value="'.$editorslugs[$i].'" '.$sel.'>'.$editors[$i].'</option>';
             }
-                  
+            
+        $f = fopen($PLUGIN_BASE."/recaptcha.txt", "r");
+        $secret = trim(fgets($f));
+        fclose($f);
+            
         $txt .= '</select></td>
                 </tr>
                 <tr>
@@ -292,7 +310,7 @@ function ae_contact_en()
                 </tr>
                 <tr>
                 <td colspan="2">
-                <div class="g-recaptcha" align="center" data-sitekey="6LfXiAMTAAAAAPjD7lpymcqLACCehoJguTiWeDzu"></div>
+                <div class="g-recaptcha" align="center" data-sitekey="'.$secret.'"></div>
                 </td>
                 </tr>
                 </tbody>
@@ -320,7 +338,7 @@ function ae_sendmsg()
 	if (!empty($recaptcha))
 		{
 		$google_url="https://www.google.com/recaptcha/api/siteverify";
-		$f = fopen($PLUGIN_BASE."/recaptcha.txt", "r");
+		$f = fopen($PLUGIN_BASE."/recaptcha-en.txt", "r");
 		$secret = trim(fgets($f));
 		fclose($f);
 		$ip = $_SERVER['REMOTE_ADDR'];
