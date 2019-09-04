@@ -25,16 +25,24 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+// base per inclustione file di testo
+$PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRICounselling/";
+
 /******************* LOAD JAVASCRIPT & CSS *******************/
 
 function AIRICounselling_load_custom_scripts() 
 	{
 	$page_ID = get_the_ID();
 	//echo $page_ID;
+	global $PLUGIN_BASE;
 
 	if ($page_ID == 10844) // Pagina AIRICounselling
 		{
-		wp_enqueue_script('google-maps', "https://maps.googleapis.com/maps/api/js?key=AIzaSyAxGjIy_2bHfeL8RTIEYP29343bbEhZIJk");
+		$f = fopen($PLUGIN_BASE."/gmaps.txt", "r");
+		$key = trim(fgets($f));
+		fclose($f);
+		    
+		wp_enqueue_script('google-maps', "https://maps.googleapis.com/maps/api/js?key=".$key);
 		wp_enqueue_script('initPage', plugins_url('AIRICounselling.js', __FILE__), array("jquery", "google-maps"), '1', true);
 		
 		wp_localize_script('initPage', 'DataTablesLoadData', array('ajaxURL' => admin_url('admin-ajax.php')));

@@ -3,7 +3,7 @@
  * Plugin Name: AIRIEditing
  * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Shortcodes per AIRIEditing.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Nicola Romanò
  * Author URI: https://github.com/nicolaromano
  * License: GPL3
@@ -24,6 +24,9 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 */
+
+// base per inclustione file di testo
+$PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRIEditing/";
 
 // Loading condizionale di Javascript
 function ae_load_custom_scripts() 
@@ -310,14 +313,16 @@ add_shortcode('AIRIEditing-contact-form', 'ae_contact');
 add_shortcode('AIRIEditing-contact-form-en', 'ae_contact_en');
 
 function ae_sendmsg()
-        {
-        global $editors, $editorslugs, $editoremails;
+{
+    global $editors, $editorslugs, $editoremails, $PLUGIN_BASE;
 
 	$recaptcha = $_POST['g-recaptcha-response'];
 	if (!empty($recaptcha))
 		{
 		$google_url="https://www.google.com/recaptcha/api/siteverify";
-		$secret = '6LfXiAMTAAAAAHBTv39MamRfreBhMF4uNidSBGr6';
+		$f = fopen($PLUGIN_BASE."/recaptcha.txt", "r");
+		$secret = trim(fgets($f));
+		fclose($f);
 		$ip = $_SERVER['REMOTE_ADDR'];
 		$url = $google_url."?secret=".$secret."&response=".$recaptcha."&remoteip=".$ip;
 			

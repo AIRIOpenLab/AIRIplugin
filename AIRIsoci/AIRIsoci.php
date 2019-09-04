@@ -3,7 +3,7 @@
  * Plugin Name: AIRIsoci
  * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Plugin per la gestione dei soci di AIRIcerca.
- * Version: 0.1.1
+ * Version: 0.1.2
  * Author: Nicola Romanò
  * Author URI: https://github.com/nicolaromano
  * License: GPL2
@@ -25,16 +25,25 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 */
 
+// base per inclustione file di testo
+$PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRIsoci/";
+
 // Loading condizionale di Javascript
 function as_load_custom_scripts() 
 	{
+	global $PLUGIN_BASE;
 	$page_ID = get_the_ID();
 	//echo $page_ID;
 	if ($page_ID == 6822) // Pagina iscrizione soci + amici
 		{
 		wp_enqueue_script('reCAPTCHA', 'https://www.google.com/recaptcha/api.js?hl=it', array(), '1', true);
 		wp_enqueue_script('checkData', plugins_url( 'registration.js', __FILE__ ), array("jquery"), '1', true);
-		wp_enqueue_script('googleMapsAPI', 'https://maps.googleapis.com/maps/api/js?key=AIzaSyD9AQjSjsVPKSySNpSfkYGsuTK1wTFvw7k&libraries=places&language=it', array(), '1', true);
+		
+		$f = fopen($PLUGIN_BASE."/gmaps.txt", "r");
+		$key = trim(fgets($f));
+		fclose($f);
+		
+		wp_enqueue_script('googleMapsAPI', 'https://maps.googleapis.com/maps/api/js?key='.$key.'&libraries=places&language=it', array(), '1', true);
 		}
 	else if ($page_ID == 7336) // Gestione soci
 		{
@@ -184,8 +193,8 @@ function as_rinnova_iscrizione_callback()
 	}
 
 function as_accetta_candidatura_callback()
-	{
-	global $wpdb;
+{
+	global $wpdb, $PLUGIN_BASE;
 	
 	$id = (int)$_POST['id'];
 
@@ -258,8 +267,11 @@ function as_accetta_candidatura_callback()
 
 	// Aggiungiamo l'utente alla lista di MailChimp
 	// Da: http://stackoverflow.com/q/30481979/176923
-	$apikey = 'c325e81de5d7b4b2fb32c72ec1040eb2-us11';
-	$listID = '6cc24bdc18';
+	// Leggiamolo da file
+	$keyfile = fopen($PLUGIN_BASE."/mchimp.txt", "r");
+	$apikey = trim(fgets($keyfile));
+	$listID = trim(fgets($keyfile));
+	fclose($keyfile);
 
 	$auth = base64_encode('user:'.$apikey);
 
@@ -283,7 +295,11 @@ function as_accetta_candidatura_callback()
 	curl_setopt($ch, CURLOPT_POST, true);
 	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 	curl_setopt($ch, CURLOPT_POSTFIELDS, $json_data);
-	$result = curl_exec($ch);
+	
+	// Non fare niente se si tratta di un test
+	if (strpos(get_site_url(), 'localhost') !== false) {
+	    $body .= "<BR /><BR /><BR /> Mailchimp list=".$listID." key=".$apikey;
+	} else { $result = curl_exec($ch); }
 		
 	wp_die();
 	}
@@ -293,6 +309,8 @@ function as_dati_personali($tipo)
 	// Importante per gli apostrofi!
 	$_POST = stripslashes_deep( $_POST );
 
+	$page_ID = get_the_ID();
+	
 	$nome = isset($_POST["nome"]) ? $_POST["nome"] : "";
 	$cognome = isset($_POST["cognome"]) ? $_POST["cognome"] : "";
 	$email = isset($_POST["email"]) ? $_POST["email"] : "";
@@ -315,7 +333,7 @@ function as_dati_personali($tipo)
 	<br />La tua iscrizione sar&agrave; valida fino al <strong>'.$endsub.'</strong></div>
 	
 	<div style="line-height=2em">&nbsp;</div>
-	<form id="form-registrazione" action=".?tp='.$tipo.'&ps=2" method="POST" enctype="multipart/form-data">
+	<form id="form-registrazione" action="'.get_site_url().'/?page_id='.$page_ID.'&tp='.$tipo.'&ps=2" method="POST" enctype="multipart/form-data">
 	<div class="cols-wrapper cols-2" style="width: 750px; margin: auto;">
 	<div class="col" style="width: 200px; text-align: right;"><label for="nome">Nome</label></div>
 	<div class="col nomargin" style="width: 500px; text-align: left;"><input id="nome" name="nome" autofocus="autofocus" required="required" placeholder="Il tuo nome" size="50" type="text" value="'.$nome.'" /></div>
@@ -413,6 +431,7 @@ function as_conferma_dati($t)
 	{
 	// Importante per gli apostrofi!!! (es. in cognomi e affiliazioni)
 	$_POST = stripslashes_deep($_POST);
+	$page_ID = get_the_ID();
 
 	$nome = isset($_POST['nome']) ? $_POST['nome'] : "";
 	$cognome = isset($_POST['cognome']) ? $_POST['cognome'] : "";
@@ -433,8 +452,11 @@ function as_conferma_dati($t)
 		$recaptcha = $_POST['g-recaptcha-response'];
 		if (!empty($recaptcha))
 			{
+			$cp = fopen($PLUGIN_BASE."/recaptcha.txt", "r");
+			$secret = trim(fgets($cp));
+			fclose($cp);
+			    
 			$google_url="https://www.google.com/recaptcha/api/siteverify";
-			$secret = '6LfXiAMTAAAAAHBTv39MamRfreBhMF4uNidSBGr6';
 			$ip = $_SERVER['REMOTE_ADDR'];
 			$url = $google_url."?secret=".$secret."&response=".$recaptcha."&remoteip=".$ip;
 			
@@ -450,9 +472,14 @@ function as_conferma_dati($t)
 			}
 		else
 			{
+			// accettiamo nessun recaptcha se siamo sul sito di sviluppo
+			    if (strpos(get_site_url(), 'localhost') !== false) {
+			        // ok, accetta;
+			    } else {
 			return "<div class='error-box'><span class='box-icon'></span>Devi confermare di non essere un robot</div>".
 				as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, 
 					$professione, $cv, $candidatura, "Torna indietro");
+			    }
 			}
 		}
 		
@@ -608,7 +635,7 @@ function as_conferma_dati($t)
 		$ambiti = array("Scienze Mediche/Biologiche", "Scienze Chimiche/Fisiche/Geologiche", "Scienze Umane", "Scienze Giuridiche/Economiche", "Ingegneria", "Architettura/Design", "Matematica");
 
 		$txt = "<div style='line-height:2em'>Prima di terminare l'iscrizione ad AIRIcerca come socio, conferma che tutti i dati inseriti siano corretti <br />
-			<form action='./?tp=1&ps=3' method='POST'>
+			<form action='".get_site_url()."/?page_id=".$page_ID."&tp=1&ps=3' method='POST'>
 			<strong>Nome:</strong> $nome<input type='hidden' name='nome' value=\"$nome\" /><br />
 			<strong>Cognome:</strong> $cognome<input type='hidden' name='cognome' value=\"$cognome\" /><br />
 			<strong>Codice fiscale:</strong> $codice_fiscale<input type='hidden' name='codice_fiscale' value='$codice_fiscale' /></br>
@@ -638,7 +665,7 @@ function as_conferma_dati($t)
 				}
 
 		$txt = "<div style='line-height:2em'>Prima di terminare l'iscrizione ad AIRIcerca come socio, conferma che tutti i dati inseriti siano corretti <br />
-			<form action='./?tp=2&ps=3' method='POST'>
+			<form action='".get_site_url()."/?page_id=".$page_ID."&tp=2&ps=3' method='POST'>
 			<strong>Nome:</strong> $nome<input type='hidden' name='nome' value=\"$nome\" /><br />
 			<strong>Cognome:</strong> $cognome<input type='hidden' name='cognome' value=\"$cognome\" /><br />
 			<strong>Codice fiscale:</strong> $codice_fiscale<input type='hidden' name='codice_fiscale' value='$codice_fiscale' /></br>
@@ -667,7 +694,7 @@ function as_conferma_dati($t)
 function as_add_user($t)
 	{
 	// La variabile globale che ci permette di accedere al DB
-	global $wpdb;
+	global $wpdb, $PLUGIN_BASE;
 	// Importante per gli apostrofi!!! (es. in cognomi e affiliazioni)
 	$_POST = stripslashes_deep($_POST);
 
@@ -788,8 +815,10 @@ function as_add_user($t)
 		
 		// Aggiungiamo l'utente alla lista di MailChimp
 		// Da: http://stackoverflow.com/q/30481979/176923
-		$apikey = 'c325e81de5d7b4b2fb32c72ec1040eb2-us11';
-		$listID = 'd290fedbee';
+		$f = fopen($PLUGIN_BASE."/mailchimp-amici.txt", "r");
+		$apikey = trim(fgets($f));
+		$listID = trim(fgets($f));
+		fclose($f);
 
 		$auth = base64_encode( 'user:'.$apikey );
 
@@ -909,7 +938,8 @@ function as_create_username($nome, $cognome)
 // Crea un form per tornare alla pagina di inserimento dati (in seguito ad errore o per modifica dati)
 function as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, $professione, $cv, $candidatura, $buttonTxt)
 	{
-	$txt = "<form action='./?tp=$t&ps=1' method='POST'>
+	$page_ID = get_the_ID();
+	$txt = "<form action='".get_site_url()."/?page_id=".$page_ID."&tp=$t&ps=1' method='POST'>
 	<div style='text-align: center'><input type='submit' value='$buttonTxt' /></div>
 	<input type=\"hidden\" name=\"t\" value=\"$t\" />
 	<input type=\"hidden\" name=\"nome\" value=\"$nome\" />
@@ -1100,7 +1130,12 @@ function as_gestione_soci($atts)
 	
 function as_reCAPTCHA()
 	{
-	return '<div class="g-recaptcha" style="margin:auto" data-sitekey="6LfXiAMTAAAAAPjD7lpymcqLACCehoJguTiWeDzu"></div>';
+    global $PLUGIN_BASE;
+    $cp = fopen($PLUGIN_BASE."/recaptcha.txt", "r");
+    $key = trim(fgets($cp));
+    fclose($cp);
+	    
+	return '<div class="g-recaptcha" style="margin:auto" data-sitekey="'.$key.'"></div>';
 	}
 
 //[privacyblurb]
@@ -1181,6 +1216,12 @@ function as_get_tessera()
 //	https://www.airicerca.org/wp-content/plugins/AIRIsoci/tessera.php?id=901
 	}
 
+function multiline_sanitize($str)
+	{
+	    return (implode("\n", array_map( 'sanitize_text_field', explode("\n", $str))));
+	}
+	
+	
 add_shortcode('iscrizione-AIRIcerca', 'as_dispatcher_iscrizione');
 add_shortcode('gestione-soci', 'as_gestione_soci');
 add_shortcode('as_reCAPTCHA', 'as_reCAPTCHA');
