@@ -3,35 +3,52 @@
  * Plugin Name: AIRIsoci
  * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Plugin per la gestione dei soci di AIRIcerca.
- * Version: 0.1.2
+ * Version: 1.1.0
  * Author: Nicola Romanò
  * Author URI: https://github.com/nicolaromano
- * License: GPL2
+ * License: GPL3
  */
  
 /* Copyright 2015 Nicola Romanò (romano.nicola@gmail.com)
 
-	This program is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License, version 2, as 
-	published by the Free Software Foundation.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// base per inclustione file di testo
-$PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRIsoci/";
+
+const REVIEWER_BIT = 0;
+
+// utilities per identificare volontari
+function as_encode_volunteer($code, $bit) {
+    return $code | (1 << $bit); 
+}
+
+function as_check_volunteer($code, $bit) {
+    return (1 & ($code >> $bit)) === 1;
+}
+
+function as_build_volunteer_code($revisore) {
+    $code = 0;
+    if ($revisore) 
+        $code = as_encode_volunteer($code, REVIEWER_BIT);
+   
+    return $code; 
+}
 
 // Loading condizionale di Javascript
 function as_load_custom_scripts() 
 	{
-	global $PLUGIN_BASE;
+	$PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRIsoci/";
 	$page_ID = get_the_ID();
 	//echo $page_ID;
 	if ($page_ID == 6822) // Pagina iscrizione soci + amici
@@ -194,7 +211,9 @@ function as_rinnova_iscrizione_callback()
 
 function as_accetta_candidatura_callback()
 {
-	global $wpdb, $PLUGIN_BASE;
+	global $wpdb;
+	
+	$PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRIsoci/";
 	
 	$id = (int)$_POST['id'];
 
@@ -322,6 +341,7 @@ function as_dati_personali($tipo)
 	$professione = isset($_POST['professione']) ? $_POST['professione'] : "";
 	$candidatura = isset($_POST['candidatura']) ? substr($_POST['candidatura'], 0, 1000) : "";
 	$cv = isset($_POST['cv']) ? substr($_POST['cv'], 0, 1000) : "";
+	$vcode = isset($_POST['vcode']) ? (int)$_POST['vcode'] : 0;
 
 	$nextyear = date("Y") + 1;
 	$endsub = date("d/m/Y", mktime(0, 0, 0, 1, 31, $nextyear));
@@ -393,7 +413,11 @@ function as_dati_personali($tipo)
 		$txt .= '<div class="col" id="affiliazione_txt" style="width: 200px; text-align: right;" required="required" >Affiliazione</div>
 		<div class="col nomargin" style="width: 500px; text-align: left;"><input id="affiliazione" name="affiliazione" size="50" type="text" required="required" value="'.
 			$affiliazione.'" placeholder="Dove fai ricerca?" /></div>';
-			  
+		
+		$txt .= '<div class="col" style="width: 200px; text-align: right;"><label for="volontariato">Volontariato</label></div>
+		<div class="col nomargin" style="width: 500px; text-align: left;">
+		<input type="checkbox" name="revisore" value="true"> <strong>Revisore</strong> &mdash; voglio aiutare con la revisione di abstracts e grants.</div>';
+			
 // Deciso di rimuovere il requisito di prova di affiliazione 8/1/18			
 /*		<div class="col" style="width: 200px; text-align: right;">Prova di affiliazione<br />(<strong>max 1Mb</strong>, formati accettati: PDF, JPG, GIF, BMP, PNG)</div>
 		<div class="col nomargin" style="width: 500px; text-align: left;"><br />
@@ -418,7 +442,7 @@ $txt .=		'<div id="cvdiv" class = "col">Inserisci un <strong>breve</strong> test
 		$txt .= '<div>In che modo contribuirai ad AIRIcerca? <i>[max 1000 caratteri]</i><br /><textarea id="candidatura" name="candidatura" cols="100" rows="10" 
 			maxlength="1000" required="required">'.$candidatura.'</textarea></div>';
 		}
-		
+
 	$txt .= '<div style="margin: auto; width: 305px; clear: both; margin-bottom: 1em;">'.do_shortcode('[as_reCAPTCHA]').'</div>
 	<div style="text-align: center;"><input type="submit" value="Procedi con la registrazione" /></div>
 	<input type="hidden" name="t" value="'.$tipo.'" />
@@ -445,6 +469,8 @@ function as_conferma_dati($t)
 	$t = isset($_POST['t']) ? (int)$_POST['t'] : -1;
 	$cv = isset($_POST['cv']) ? substr($_POST['cv'], 0, 1000) : "";
 	$candidatura = isset($_POST['candidatura']) ? substr($_POST['candidatura'], 0, 1000) : "";
+	$revisore = isset($_POST['revisore']) ? true : false;
+	$vcode = isset($_POST['vcode']) ? (int)$_POST['vcode'] : as_build_volunteer_code($revisore);
 
 	// Verifichiamo il noCaptcha reCaptcha
 	if ($_SERVER["REQUEST_METHOD"] == "POST")
@@ -467,7 +493,7 @@ function as_conferma_dati($t)
 				{
 				return "<div class='error-box'><span class='box-icon'></span>Devi confermare di non essere un robot</div>".
 					as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, 
-						$professione, $cv, $candidatura, "Torna indietro");
+						$professione, $cv, $candidatura, $vcode, "Torna indietro");
 				}
 			}
 		else
@@ -478,7 +504,7 @@ function as_conferma_dati($t)
 			    } else {
 			return "<div class='error-box'><span class='box-icon'></span>Devi confermare di non essere un robot</div>".
 				as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, 
-					$professione, $cv, $candidatura, "Torna indietro");
+					$professione, $cv, $candidatura, $vcode, "Torna indietro");
 			    }
 			}
 		}
@@ -491,7 +517,7 @@ function as_conferma_dati($t)
 				{
 				return "<div class='error-box'><span class='box-icon'></span>Tutti i campi devono essere completati</div>".
 				as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, 
-					$professione, $cv, $candidatura, "Torna indietro");
+					$professione, $cv, $candidatura, $vcode, "Torna indietro");
 				}
 				
 		$txt = "<div style='line-height:2em'>Prima di terminare l'iscrizione ad AIRIcerca come amico, conferma che tutti i dati inseriti siano corretti <br />
@@ -510,7 +536,7 @@ function as_conferma_dati($t)
 				{
 				return "<div class='error-box'><span class='box-icon'></span>Tutti i campi devono essere completati</div>".
 				as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, 
-					$professione, $cv, $candidatura, "Torna indietro");
+					$professione, $cv, $candidatura, $vcode, "Torna indietro");
 				}
 		
 		// Rimosso 8/1/18		
@@ -629,7 +655,7 @@ function as_conferma_dati($t)
 			{
 			return "<div class='error-box'><span class='box-icon'></span>".$e->getMessage()."</div>".
 				as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, 
-					$professione, $cv, $candidatura, "Torna indietro");
+					$professione, $cv, $candidatura, $vcode, "Torna indietro");
 			}
 
 		$ambiti = array("Scienze Mediche/Biologiche", "Scienze Chimiche/Fisiche/Geologiche", "Scienze Umane", "Scienze Giuridiche/Economiche", "Ingegneria", "Architettura/Design", "Matematica");
@@ -644,13 +670,20 @@ function as_conferma_dati($t)
 			<strong>Affiliazione:</strong> $affiliazione<input type='hidden' name='affiliazione' value=\"$affiliazione\" /><br />
 			<strong>Città:</strong> $citta<input type='hidden' name='citta' value=\"$citta\" /><br />
 			<strong>Prova di pagamento:</strong> $prova_pagamento<input type='hidden' name='prova_pagamento' value=\"$prova_pagamento\" /><br />";
+		if ($vcode !== 0) {
+		    $sfx = ' ';
+		    if (as_check_volunteer($vcode, REVIEWER_BIT))
+		        $sfx .= 'Revisore';
+		        $txt .= "<strong>Volontariato:</strong>$sfx<input type='hidden' name='vcode' value='$vcode' /><br />";
+		}
 		if ($professione != "Studente")
 			{
 			$txt .= "<strong>Ambito:</strong> $ambiti[$ambito]<input type='hidden' name='ambito' value='$ambito' /><br />
 			<strong>Il tuo CV</strong>:<br />
 			<textarea name='cv' readonly='readonly' cols='100' rows='10'>".$cv."</textarea>";
 			}
-			
+
+		
 		$txt .=	"<div style='line-height:2em'>&nbsp;</div>
 			<div style='text-align: center'><input type='submit' value='Procedi' /></div>
 			</form>";
@@ -661,7 +694,7 @@ function as_conferma_dati($t)
 				{
 				return "<div class='error-box'><span class='box-icon'></span>Tutti i campi devono essere completati</div>".
 				as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, 
-					$professione, $cv, $candidatura, "Torna indietro");
+					$professione, $cv, $candidatura, $vcode, "Torna indietro");
 				}
 
 		$txt = "<div style='line-height:2em'>Prima di terminare l'iscrizione ad AIRIcerca come socio, conferma che tutti i dati inseriti siano corretti <br />
@@ -671,8 +704,16 @@ function as_conferma_dati($t)
 			<strong>Codice fiscale:</strong> $codice_fiscale<input type='hidden' name='codice_fiscale' value='$codice_fiscale' /></br>
 			<strong>e-mail:</strong> $email<input type='hidden' name='email' value='$email' /><br />
 			<strong>Prova di pagamento:</strong> $prova_pagamento<input type='hidden' name='prova_pagamento' value=\"$prova_pagamento\" /><br />
-			<strong>Professione:</strong> $professione<input type='hidden' name='professione' value=\"$professione\"><br />
-			<strong>Come puoi aiutarci</strong>:<br />
+			<strong>Professione:</strong> $professione<input type='hidden' name='professione' value=\"$professione\"><br />";
+		
+		if ($vcode !== 0) {
+		    $sfx = ' ';
+		    if (as_check_volunteer($vcode, REVIEWER_BIT))
+		        $sfx .= 'Revisore';
+		        $txt .= "<strong>Volontariato:</strong>$sfx<input type='hidden' name='vcode' value='$vcode' /><br />";
+		}
+		
+		$txt.= "<strong>Come puoi aiutarci</strong>:<br />
 			<textarea name='candidatura' readonly='readonly' cols='100' rows='10'>$candidatura</textarea>
 			<div style='line-height:2em'>&nbsp;</div>
 			<div style='text-align: center'><input type='submit' value='Procedi' /></div>
@@ -682,11 +723,11 @@ function as_conferma_dati($t)
 		{
 		return "<div class='error-box'><span class='box-icon'></span>Errore interno</div>".
 			as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, 
-				$professione, $cv, $candidatura, "Torna indietro");
+			    $professione, $cv, $candidatura, $vcode, "Torna indietro");
 		}
 			
 	$txt .= as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, 
-			$professione, $cv, $candidatura, "Modifica i dati");
+	    $professione, $cv, $candidatura, $vcode, "Modifica i dati");
 		
 	return $txt;
 	}
@@ -694,9 +735,10 @@ function as_conferma_dati($t)
 function as_add_user($t)
 	{
 	// La variabile globale che ci permette di accedere al DB
-	global $wpdb, $PLUGIN_BASE;
+	global $wpdb;
 	// Importante per gli apostrofi!!! (es. in cognomi e affiliazioni)
 	$_POST = stripslashes_deep($_POST);
+	$PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRIsoci/";
 
 	$nome = isset($_POST['nome']) ? ucwords(mb_strtolower($_POST['nome'])) : "";
 	$cognome = isset($_POST['cognome']) ? ucwords(mb_strtolower($_POST['cognome'])) : "";
@@ -710,6 +752,7 @@ function as_add_user($t)
 	$professione = isset($_POST['professione']) ? $_POST['professione'] : "";
 	$cv = isset($_POST['cv']) ? substr(multiline_sanitize($_POST['cv']), 0, 1000) : "";
 	$candidatura = isset($_POST['candidatura']) ? substr(multiline_sanitize($_POST['candidatura']), 0, 1000) : "";
+	$vcode = isset($_POST['vcode']) ? (int)$_POST['vcode'] : 0;
 	$t = isset($_GET['tp']) ? (int)$_GET['tp'] : -1;
 	
 	// Controlliamo di avere tutti i dati
@@ -842,7 +885,10 @@ function as_add_user($t)
 		curl_setopt($ch, CURLOPT_POST, true);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $json_data);
-		$result = curl_exec($ch);
+		// Non fare niente se si tratta di un test
+		if (strpos(get_site_url(), 'localhost') !== false) {
+		    $body .= "<BR /><BR /><BR /> Mailchimp list=".$listID." key=".$apikey;
+		} else { $result = curl_exec($ch); }
 		}
 	// SOCIO
 	else if ($t == 1 || $t == 2)
@@ -875,7 +921,12 @@ function as_add_user($t)
 								'tipo_utente'	=> $t));
 			}
 
-		if (!$res || !$res1 || !$res2)
+		if (as_check_volunteer($vcode, REVIEWER_BIT))
+		  $res3 = add_user_meta($user_id, "revisoreGrant", 1);
+		else 
+		  $res3 = true;
+			
+		if (!$res || !$res1 || !$res2 || !$res3)
 			{
 			$txt .= "<div class='error-box'><span class='box-icon'></span>C'&egrave; stato un errore durante l'inserimento dell'utente nel database di AIRIcerca<br />";
 			$txt .= "L'iscrizione proceder&agrave; comunque, ma il profilo utente potrebbe non essere completo.</div>";
@@ -936,7 +987,7 @@ function as_create_username($nome, $cognome)
 
 	
 // Crea un form per tornare alla pagina di inserimento dati (in seguito ad errore o per modifica dati)
-function as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, $professione, $cv, $candidatura, $buttonTxt)
+function as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, $professione, $cv, $candidatura, $vcode, $buttonTxt)
 	{
 	$page_ID = get_the_ID();
 	$txt = "<form action='".get_site_url()."/?page_id=".$page_ID."&tp=$t&ps=1' method='POST'>
@@ -953,6 +1004,7 @@ function as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliaz
 	<input type=\"hidden\" name=\"professione\" value=\"$professione\" /><br />
 	<input type=\"hidden\" name=\"cv\" value=\"$cv\" /><br />
 	<input type=\"hidden\" name=\"candidatura\" value=\"$candidatura\" /><br />
+    <input type=\"hidden\" name=\"vcode\" value=\"$vcode\" /><br />
 
 	</form></div>";
 	
@@ -1130,7 +1182,7 @@ function as_gestione_soci($atts)
 	
 function as_reCAPTCHA()
 	{
-    global $PLUGIN_BASE;
+	$PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRIsoci/";
     $cp = fopen($PLUGIN_BASE."/recaptcha.txt", "r");
     $key = trim(fgets($cp));
     fclose($cp);

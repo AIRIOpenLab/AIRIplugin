@@ -3,7 +3,7 @@
  * Plugin Name: AIRICounselling
  * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Plugin per le pagine di AIRICounselling.
- * Version: 1.0.1
+ * Version: 1.1.0
  * Author: Nicola Romanò
  * Author URI: https://github.com/nicolaromano
  * License: GPL3
@@ -25,8 +25,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// base per inclustione file di testo
-$PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRICounselling/";
 
 /******************* LOAD JAVASCRIPT & CSS *******************/
 
@@ -34,18 +32,25 @@ function AIRICounselling_load_custom_scripts()
 	{
 	$page_ID = get_the_ID();
 	//echo $page_ID;
-	global $PLUGIN_BASE;
+	$PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRICounselling/";
 
 	if ($page_ID == 10844) // Pagina AIRICounselling
 		{
-		$f = fopen($PLUGIN_BASE."/gmaps.txt", "r");
+		//$f = fopen($_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRICounselling/gmaps.txt", "r");
+		$f = fopen($PLUGIN_BASE."/leaflet.txt", "r");
 		$key = trim(fgets($f));
 		fclose($f);
-		    
-		wp_enqueue_script('google-maps', "https://maps.googleapis.com/maps/api/js?key=".$key);
-		wp_enqueue_script('initPage', plugins_url('AIRICounselling.js', __FILE__), array("jquery", "google-maps"), '1', true);
+		  
+		wp_register_style( 'leafletcss', 'https://unpkg.com/leaflet@1.5.1/dist/leaflet.css' );
+		wp_enqueue_style( 'leafletcss' );
 		
-		wp_localize_script('initPage', 'DataTablesLoadData', array('ajaxURL' => admin_url('admin-ajax.php')));
+		wp_enqueue_script('leaflet', 'https://unpkg.com/leaflet@1.5.1/dist/leaflet.js' );
+		
+		//wp_enqueue_script('google-maps', "https://maps.googleapis.com/maps/api/js?key=".$key);
+		//wp_enqueue_script('initPage', plugins_url('AIRICounselling.js', __FILE__), array("jquery", "google-maps"), '1', true);
+		wp_enqueue_script('initPage', plugins_url('AIRICounselling.js', __FILE__), array("jquery", "leaflet", "leafletcss"), '1', true);
+		
+		wp_localize_script('initPage', 'DataTablesLoadData', array('ajaxURL' => admin_url('admin-ajax.php'), 'leafletkey' => $key));
 		}
 	}
 

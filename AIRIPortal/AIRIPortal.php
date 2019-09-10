@@ -3,7 +3,7 @@
  * Plugin Name: AIRIPortal
  * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Plugin per la gestione della homepage.
- * Version: 1.0.1
+ * Version: 1.1.0
  * Author: Nicola Romanò
  * Author URI: https://github.com/nicolaromano
  * License: GPL3

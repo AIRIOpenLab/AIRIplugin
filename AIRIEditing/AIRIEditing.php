@@ -3,7 +3,7 @@
  * Plugin Name: AIRIEditing
  * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Shortcodes per AIRIEditing.
- * Version: 1.0.1
+ * Version: 1.1.0
  * Author: Nicola Romanò
  * Author URI: https://github.com/nicolaromano
  * License: GPL3
@@ -25,8 +25,6 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 */
 
-// base per inclustione file di testo
-$PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRIEditing/";
 
 // Loading condizionale di Javascript
 function ae_load_custom_scripts() 
@@ -50,16 +48,19 @@ $editorslugs = array();
 $editoremails = array();
 
 //Apriamo il file CSV con gli editori.
-$fileHandle = fopen($PLUGIN_BASE."/editori.csv", "r");
-
-//Loop.
-while (($row = fgetcsv($fileHandle, 0, ",", '"')) !== FALSE) {
-    array_push($editors, $row[0]);
-    array_push($editorslugs, $row[1]);
-    array_push($editoremails, $row[2]);
+$PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRIEditing/";
+if (file_exists($PLUGIN_BASE."/editori.csv")) {
+    $fileHandle = fopen($PLUGIN_BASE."/editori.csv", "r");
+    
+    //Loop.
+    while (($row = fgetcsv($fileHandle, 0, ",", '"')) !== FALSE) {
+        array_push($editors, $row[0]);
+        array_push($editorslugs, $row[1]);
+        array_push($editoremails, $row[2]);
+    }
+    
+    fclose($fileHandle);
 }
-
-fclose($fileHandle);
 
 
 
@@ -67,7 +68,9 @@ fclose($fileHandle);
 // [AIRIEditing-contact-form]
 function ae_contact()
 	{
-        global $editors, $editorslugs, $editoremails, $PLUGIN_BASE;
+        global $editors, $editorslugs, $editoremails;
+        
+        $PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRIEditing/";
 
         if (isset($_POST['firstname']))
            {
@@ -198,7 +201,9 @@ Gli editor assicurano di aver messo in atto misure di sicurezza per la salvaguar
 // [AIRIEditing-contact-form-en]
 function ae_contact_en()
 	{
-        global $editors, $editorslugs, $editoremails, $PLUGIN_BASE;
+        global $editors, $editorslugs, $editoremails;
+        
+        $PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRIEditing/";
 
         if (isset($_POST['firstname']))
            {
@@ -332,7 +337,9 @@ add_shortcode('AIRIEditing-contact-form-en', 'ae_contact_en');
 
 function ae_sendmsg()
 {
-    global $editors, $editorslugs, $editoremails, $PLUGIN_BASE;
+    global $editors, $editorslugs, $editoremails;
+    
+    $PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRIEditing/";
 
 	$recaptcha = $_POST['g-recaptcha-response'];
 	if (!empty($recaptcha))

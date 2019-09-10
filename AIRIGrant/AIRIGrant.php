@@ -3,7 +3,7 @@
  * Plugin Name: AIRIGrant
  * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Plugin per le pagine di AIRIGrant.
- * Version: 1.0.1
+ * Version: 1.1.0
  * Author: Nicola Romanò
  * Author URI: https://github.com/nicolaromano
  * License: GPL3
