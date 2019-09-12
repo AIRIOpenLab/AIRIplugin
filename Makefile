@@ -2,7 +2,7 @@
 
 .DEFAULT: all
 
-all: assemblee AIRIbandi AIRICounselling AIRIsoci AIRIGrant AIRIPortal
+all: assemblee AIRIbandi AIRICounselling AIRIsoci AIRIGrant AIRIPortal AIRIGuida
 
 assemblee: $(sort $(patsubst %.src.js,%.js,$(wildcard assemblee/js/*.src.js)))
 	@echo "Assemblee done."
@@ -15,6 +15,9 @@ AIRICounselling: $(sort $(patsubst %.src.js,%.js,$(wildcard AIRICounselling/*.sr
 	
 AIRIGrant: $(sort $(patsubst %.src.js,%.js,$(wildcard AIRIGrant/*.src.js)))
 	@echo "AIRIGrant done."
+	
+AIRIGuida: $(sort $(patsubst %.src.js,%.js,$(wildcard AIRIGuida/*.src.js)))
+	@echo "AIRIGuida done."
 	
 AIRIPortal: $(sort $(patsubst %.src.js,%.js,$(wildcard AIRIPortal/*.src.js)))
 	@echo "AIRIPortal done."
@@ -29,6 +32,9 @@ AIRIbandi/%.js: AIRIbandi/%.src.js
 	uglifyjs $^ -c -m > $@
 	
 AIRIGrant/%.js: AIRIGrant/%.src.js
+	uglifyjs $^ -c -m > $@
+	
+AIRIGuida/%.js: AIRIGuida/%.src.js
 	uglifyjs $^ -c -m > $@
 	
 AIRIPortal/%.js: AIRIPortal/%.src.js

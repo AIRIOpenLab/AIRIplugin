@@ -48,7 +48,7 @@ function AIRICounselling_load_custom_scripts()
 		
 		//wp_enqueue_script('google-maps', "https://maps.googleapis.com/maps/api/js?key=".$key);
 		//wp_enqueue_script('initPage', plugins_url('AIRICounselling.js', __FILE__), array("jquery", "google-maps"), '1', true);
-		wp_enqueue_script('initPage', plugins_url('AIRICounselling.js', __FILE__), array("jquery", "leaflet", "leafletcss"), '1', true);
+		wp_enqueue_script('initPage', plugins_url('AIRICounselling.js', __FILE__), array("jquery", "leaflet"), '1', true);
 		
 		wp_localize_script('initPage', 'DataTablesLoadData', array('ajaxURL' => admin_url('admin-ajax.php'), 'leafletkey' => $key));
 		}
