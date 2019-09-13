@@ -15,8 +15,8 @@ var jeoquery = (function ($) {
   };
   my.defaultCountryCode = 'IT';
   my.defaultLanguage = 'it';
-  my.geoNamesApiServer = 'api.geonames.org';
-  my.geoNamesProtocol = 'http';
+  my.geoNamesApiServer = 'secure.geonames.org';
+  my.geoNamesProtocol = 'https';
 
   my.featureClass = {
     AdministrativeBoundary: 'A',
