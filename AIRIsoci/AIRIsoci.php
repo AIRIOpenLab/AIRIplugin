@@ -1282,7 +1282,19 @@ function multiline_sanitize($str)
 	{
 	    return (implode("\n", array_map( 'sanitize_text_field', explode("\n", $str))));
 	}
-	
+
+//[privacyblurb]
+function print_privacy_blurb()
+    {
+        return '<div class="font-small"><strong>INFORMAZIONI SULLA PRIVACY: </strong>Tutti i dati personali forniti saranno trattati nel rispetto del D.Lgs. 30 giugno 2003, n. 196 '.
+       	    'recante il Codice in materia di protezione dei dati personali. I dati personali verranno trattati elettronicamente e saranno conservati all\'interno del database '.
+       	    'digitale a tal uopo predisposto. Tutti i dati personali saranno trattati rispettando le misure minime di sicurezza prescritte dalla Legge, in modo da ridurne al '.
+       	    'minimo i rischi di distruzione o perdita, di accesso non autorizzato o di trattamento non conforme alle finalità della raccolta. In relazione al trattamento dei '.
+       	    'dati personali, il socio iscritto può esercitare i diritti riconosciutigli dall\'art. 7 del D.Lgs. 196/2003, e dunque, il diritto di accedere ai dati, il diritto '.
+       	    'di ottenere rettifica e/o aggiornamento e/o integrazione dei dati, il diritto di ottenere cancellazione/trasformazione".</div>';
+    }
+
+add_shortcode('privacy-blurb', 'print_privacy_blurb');
 	
 add_shortcode('iscrizione-AIRIcerca', 'as_dispatcher_iscrizione');
 add_shortcode('gestione-soci', 'as_gestione_soci');
