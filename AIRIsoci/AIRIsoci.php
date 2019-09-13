@@ -52,13 +52,10 @@ function as_load_custom_scripts()
 	$page_ID = get_the_ID();
 	//echo $page_ID;
 	if ($page_ID == 6822) // Pagina iscrizione soci + amici
-		{
-		wp_register_style( 'jqueryuicss', "https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/themes/redmond/jquery-ui.css" );
-		wp_enqueue_style( 'jqueryuicss' );
-		    
+		{		    
 		wp_enqueue_script('reCAPTCHA', 'https://www.google.com/recaptcha/api.js?hl=it', array(), '1', true);
 		
-		wp_enqueue_script('jquery-ui', "http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js", array("jquery"), '1', true);
+		wp_enqueue_script('jquery-ui', "https://code.jquery.com/ui/1.11.4/jquery-ui.min.js", array("jquery"), '1', true);
 		wp_enqueue_script('jeoquery', plugins_url( 'jeoquery.js', __FILE__ ), array("jquery"), '1', true);
 		
 		wp_enqueue_script('checkData', plugins_url( 'registration.js', __FILE__ ), array("jquery", "jquery-ui", "jeoquery"), '1', true);
