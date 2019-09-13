@@ -53,14 +53,15 @@ function as_load_custom_scripts()
 	//echo $page_ID;
 	if ($page_ID == 6822) // Pagina iscrizione soci + amici
 		{
+		wp_register_style( 'jqueryuicss', "https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/themes/redmond/jquery-ui.css" );
+		wp_enqueue_style( 'jqueryuicss' );
+		    
 		wp_enqueue_script('reCAPTCHA', 'https://www.google.com/recaptcha/api.js?hl=it', array(), '1', true);
-		wp_enqueue_script('checkData', plugins_url( 'registration.js', __FILE__ ), array("jquery"), '1', true);
 		
-		$f = fopen($PLUGIN_BASE."/gmaps.txt", "r");
-		$key = trim(fgets($f));
-		fclose($f);
+		wp_enqueue_script('jquery-ui', "http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js", array("jquery"), '1', true);
+		wp_enqueue_script('jeoquery', plugins_url( 'jeoquery.js', __FILE__ ), array("jquery"), '1', true);
 		
-		wp_enqueue_script('googleMapsAPI', 'https://maps.googleapis.com/maps/api/js?key='.$key.'&libraries=places&language=it', array(), '1', true);
+		wp_enqueue_script('checkData', plugins_url( 'registration.js', __FILE__ ), array("jquery", "jquery-ui", "jeoquery"), '1', true);
 		}
 	else if ($page_ID == 7336) // Gestione soci
 		{
@@ -414,9 +415,12 @@ function as_dati_personali($tipo)
 		<div class="col nomargin" style="width: 500px; text-align: left;"><input id="affiliazione" name="affiliazione" size="50" type="text" required="required" value="'.
 			$affiliazione.'" placeholder="Dove fai ricerca?" /></div>';
 		
+		$rev_checked = as_check_volunteer($vcode, REVIEWER_BIT) ? "checked" : "";
+			
 		$txt .= '<div class="col" style="width: 200px; text-align: right;"><label for="volontariato">Volontariato</label></div>
 		<div class="col nomargin" style="width: 500px; text-align: left;">
-		<input type="checkbox" name="revisore" value="true"> <strong>Revisore</strong> &mdash; voglio aiutare con la revisione di abstracts e grants.</div>';
+		<input type="checkbox" name="revisore" value="true" '.$rev_checked.'> <strong>Revisore</strong> &mdash; voglio aiutare con la revisione di abstracts e grants.</div>';
+		
 			
 // Deciso di rimuovere il requisito di prova di affiliazione 8/1/18			
 /*		<div class="col" style="width: 200px; text-align: right;">Prova di affiliazione<br />(<strong>max 1Mb</strong>, formati accettati: PDF, JPG, GIF, BMP, PNG)</div>
@@ -441,6 +445,12 @@ $txt .=		'<div id="cvdiv" class = "col">Inserisci un <strong>breve</strong> test
 			'<input id="professione" name="professione" required="required" size="50" type="text" value="'.$professione.'" /></div></div>';
 		$txt .= '<div>In che modo contribuirai ad AIRIcerca? <i>[max 1000 caratteri]</i><br /><textarea id="candidatura" name="candidatura" cols="100" rows="10" 
 			maxlength="1000" required="required">'.$candidatura.'</textarea></div>';
+		
+		$rev_checked = as_check_volunteer($vcode, REVIEWER_BIT) ? "checked" : "";
+		
+		$txt .= '<div class="col" style="width: 200px; text-align: right;"><label for="volontariato">Volontariato</label></div>
+		<div class="col nomargin" style="width: 500px; text-align: left;">
+		<input type="checkbox" name="revisore" value="true" '.$rev_checked.'> <strong>Revisore</strong> &mdash; voglio aiutare con la revisione di abstracts e grants.</div>';
 		}
 
 	$txt .= '<div style="margin: auto; width: 305px; clear: both; margin-bottom: 1em;">'.do_shortcode('[as_reCAPTCHA]').'</div>

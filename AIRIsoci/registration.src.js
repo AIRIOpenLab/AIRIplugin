@@ -66,8 +66,14 @@ function checkData()
 				types: ['(cities)']
 				}
 
-			input = /** @type {!HTMLInputElement} */(document.getElementById('citta'));
-			autocomplete = new google.maps.places.Autocomplete(input, options);
+			$("#citta").jeoCityAutoComplete({callback: function(city) { 
+				if (console) console.log(city);
+				
+				$('#lat').val(city.lat);
+				$('#lng').val(city.lng);
+				
+				}
+			});
 
 			$('select#professione').change(function()
 				{
@@ -114,9 +120,6 @@ function checkData()
 						res = false; 
 						}
 						
-				var place = autocomplete.getPlace();
-				$('#lat').val(place.geometry.location.lat());
-				$('#lng').val(place.geometry.location.lng());
 
 				return res; // se restituiamo false il form non sarà inviato
 				});
