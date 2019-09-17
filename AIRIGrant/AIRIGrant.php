@@ -3,7 +3,7 @@
  * Plugin Name: AIRIGrant
  * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Plugin per le pagine di AIRIGrant.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: Nicola Romanò
  * Author URI: https://github.com/nicolaromano
  * License: GPL3
@@ -100,6 +100,8 @@ function AIRIGrant_add_revisore()
 function AIRIGrantRevisori()
 	{
 	global $wpdb;
+	
+	$ambiti = array("Scienze Mediche/Biologiche", "Scienze Chimiche/Fisiche/Geologiche", "Scienze Umane", "Scienze Giuridiche/Economiche",  "Ingegneria", "Architettura/Design", "Matematica");
 				
 	$txt = "";
 	
@@ -111,10 +113,26 @@ function AIRIGrantRevisori()
 		{
 		$ud = get_userdata($u->user_id);
 		
+		$dati_personali = get_user_meta($u->user_id, "dati_personali");
+		$dati_personali = $dati_personali[0];
+				
+		if (array_key_exists("cip2010_desc", $dati_personali))
+		{
+		    $professione = $dati_personali['professione']." - ".$dati_personali["cip2010_desc"];
+		}
+		else if (array_key_exists("ambito", $dati_personali))
+		{
+		    $professione = $dati_personali['professione']." - ".$ambiti[$dati_personali["ambito"]];
+		}
+		else { 
+		    $professione = $dati_personali['professione'];
+		}
+		
 		$txt .= "<div id='revisore_".$u->user_id. "'><strong>" . get_user_meta($u->user_id, "first_name", true). " ". 
 		get_user_meta($u->user_id, "last_name", true). "</strong> - <span style='font-size:0.7em'><a href = 'mailto:". 
 		$ud->user_email . "'>" . $ud->user_email . "</a></span> <button id='rem_revisore_".$u->user_id.
 		"' style='padding:0.2em; font-size:0.7em'>Elimina</button><br />".
+		"<span>Professione: $professione</span>".
 		"<span style='margin-left: 3em;'>". get_user_meta($u->user_id, "revisoreExperience", true) ."</span></div>";
 		}
 		
