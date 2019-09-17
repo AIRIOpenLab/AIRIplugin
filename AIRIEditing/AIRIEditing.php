@@ -3,7 +3,7 @@
  * Plugin Name: AIRIEditing
  * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Shortcodes per AIRIEditing.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: Nicola Romanò
  * Author URI: https://github.com/nicolaromano
  * License: GPL3
@@ -169,7 +169,7 @@ function ae_contact()
             $txt .= '<option value="'.$editorslugs[$i].'" '.$sel.'>'.$editors[$i].'</option>';
             }
                  
-        $f = fopen($PLUGIN_BASE."/recaptcha.txt", "r");
+        $f = fopen($PLUGIN_BASE."/recaptcha-sitekey.txt", "r");
         $secret = trim(fgets($f));
         fclose($f);
             
@@ -303,7 +303,7 @@ function ae_contact_en()
             $txt .= '<option value="'.$editorslugs[$i].'" '.$sel.'>'.$editors[$i].'</option>';
             }
             
-        $f = fopen($PLUGIN_BASE."/recaptcha.txt", "r");
+        $f = fopen($PLUGIN_BASE."/recaptcha-sitekey.txt", "r");
         $secret = trim(fgets($f));
         fclose($f);
             
@@ -345,7 +345,7 @@ function ae_sendmsg()
 	if (!empty($recaptcha))
 		{
 		$google_url="https://www.google.com/recaptcha/api/siteverify";
-		$f = fopen($PLUGIN_BASE."/recaptcha-en.txt", "r");
+		$f = fopen($PLUGIN_BASE."/recaptcha-secret.txt", "r");
 		$secret = trim(fgets($f));
 		fclose($f);
 		$ip = $_SERVER['REMOTE_ADDR'];

@@ -3,7 +3,7 @@
  * Plugin Name: AIRIsoci
  * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Plugin per la gestione dei soci di AIRIcerca.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: Nicola Romanò
  * Author URI: https://github.com/nicolaromano
  * License: GPL3
@@ -58,7 +58,24 @@ function as_load_custom_scripts()
 		wp_enqueue_script('jquery-ui', "https://code.jquery.com/ui/1.11.4/jquery-ui.min.js", array("jquery"), '1', true);
 		wp_enqueue_script('jeoquery', plugins_url( 'jeoquery.js', __FILE__ ), array("jquery"), '1', true);
 		
+		if (strpos(get_site_url(), 'localhost') !== true) {
+		    wp_register_style('jqueryuicss', 'https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css?ver=1.11.4');
+		    wp_enqueue_style('jqueryuicss');
+		}
+		
+		wp_register_style('select2css', 'https://unpkg.com/select2@4.0.5/dist/css/select2.min.css');
+		wp_enqueue_style('select2css');
+		
+		wp_enqueue_script('select2', 'https://unpkg.com/select2@4.0.5/dist/js/select2.min.js', array(), '1', true);
+		wp_enqueue_script('cip2010', plugins_url('cips2010_data.js', __FILE__), array(), '1', true);
+		wp_enqueue_script('select2-i18n', plugins_url('i18n/it.js', __FILE__), array(), '1', true);
+		
+		wp_enqueue_script('select-cip2010', plugins_url( 'select_cip2010.js', __FILE__ ), array('jquery', 'select2', 'cip2010', 'select2-i18n'), '1', true);
+		
 		wp_enqueue_script('checkData', plugins_url( 'registration.js', __FILE__ ), array("jquery", "jquery-ui", "jeoquery"), '1', true);
+		
+		
+		
 		}
 	else if ($page_ID == 7336) // Gestione soci
 		{
@@ -334,12 +351,15 @@ function as_dati_personali($tipo)
 	$codice_fiscale = isset($_POST["codice_fiscale"]) ? $_POST['codice_fiscale'] : "";
 	$affiliazione = isset($_POST['affiliazione']) ? $_POST['affiliazione'] : "";
 	$citta = isset($_POST['citta']) ? $_POST['citta'] : "";
-	$ambito = isset($_POST['ambito']) ? (int)$_POST['ambito'] : "";
+	$cip2010 = isset($_POST['cip2010']) ? $_POST['cip2010'] : "";
+	$cip2010_desc = isset($_POST['cip2010_desc']) ? $_POST['cip2010_desc'] : "";
 	$prova_pagamento = isset($_POST['prova_pagamento']) ? $_POST['prova_pagamento'] : "";
 	$professione = isset($_POST['professione']) ? $_POST['professione'] : "";
 	$candidatura = isset($_POST['candidatura']) ? substr($_POST['candidatura'], 0, 1000) : "";
 	$cv = isset($_POST['cv']) ? substr($_POST['cv'], 0, 1000) : "";
 	$vcode = isset($_POST['vcode']) ? (int)$_POST['vcode'] : 0;
+	$lat = isset($_POST['lat']) ? (float)$_POST['lat'] : 90;
+	$lng = isset($_POST['lng']) ? (float)$_POST['lng'] : 0;
 
 	$nextyear = date("Y") + 1;
 	$endsub = date("d/m/Y", mktime(0, 0, 0, 1, 31, $nextyear));
@@ -370,7 +390,7 @@ function as_dati_personali($tipo)
 	<div class="error-box" style="display:none;" id="invalidEmail"><span class="box-icon"></span>Gli indirizzi email non corrispondono</div>
 	</div>
 	<div class="col" style="width: 200px; text-align: right;"><label for="citta">Città</label></div>
-	<div class="col nomargin" style="width: 500px; text-align: left;"><input id="citta" name="citta" required="required" size="50" type="text" placeholder="La città in cui vivi: es. Roma" value="'.$citta.'" /><input type="hidden" id="lat" /> <input type="hidden" id="lng" /></div>';
+	<div class="col nomargin" style="width: 500px; text-align: left;"><input id="citta" name="citta" required="required" size="50" type="text" placeholder="La città in cui vivi: es. Roma" value="'.$citta.'" /><input type="hidden" name="lat" id="lat" /> <input type="hidden" name="lng" id="lng" /></div>';
 
 
 	if ($tipo == 1)
@@ -388,19 +408,17 @@ function as_dati_personali($tipo)
 				}
 		$txt .= "</select></div>";
 
-		$ambiti = array("Scienze Mediche/Biologiche", "Scienze Chimiche/Fisiche/Geologiche", "Scienze Umane", "Scienze Giuridiche/Economiche",  "Ingegneria", "Architettura/Design", "Matematica");
 		
+		$select_opt = '<option/>';
+		
+		if ($cip2010 != -1) 
+		    $select_opt = '<option value="'.$cip2010.'" selected>'.$cip2010_desc.'</option>';
+
 		$txt .= '<div class="col" style="width: 200px; text-align: right;">Ambito di ricerca</div>
-		<div class="col nomargin" style="width: 500px; text-align: left;"><select name="ambito">';
-
-		for ($i=0; $i<count($ambiti); $i++)
-			{
-			$sel = ($i==$ambito) ? "selected='selected'": "";
-			$txt .= "<option value='$i' $sel>$ambiti[$i]</option>";
-			}
+        <div class="col nomargin" style="width: 500px; text-align: left;">
+		<select id="cip_select" class="js-example-basic-single form-control" name="cip2010" onchange="cipSelectFunction()" style="width: 500px;">
+		'.$select_opt.'</select><input type="hidden" id="cip2010_desc" name="cip2010_desc" value="'.$cip2010_desc.'" /></div>';
 		
-		$txt .= '</select></div>';
-
 		$txt .= '<div class="col" style="width: 200px; text-align: right;">Prova di pagamento<br />(<strong>max 1Mb</strong>, formati accettati: PDF, JPG, GIF, BMP, PNG)</div>
 		<div class="col nomargin" style="width: 500px; text-align: left;"><br />
 		<input type="file" id="prova_pagamento" name="prova_pagamento" accept="image/jpeg,image/gif,image/png,application/pdf,image/bmp" required="required" />
@@ -419,14 +437,7 @@ function as_dati_personali($tipo)
 		<input type="checkbox" name="revisore" value="true" '.$rev_checked.'> <strong>Revisore</strong> &mdash; voglio aiutare con la revisione di abstracts e grants.</div>';
 		
 			
-// Deciso di rimuovere il requisito di prova di affiliazione 8/1/18			
-/*		<div class="col" style="width: 200px; text-align: right;">Prova di affiliazione<br />(<strong>max 1Mb</strong>, formati accettati: PDF, JPG, GIF, BMP, PNG)</div>
-		<div class="col nomargin" style="width: 500px; text-align: left;"><br />
-		<input type="file" id="prova" name="prova" accept="image/jpeg,image/gif,image/png,application/pdf,image/bmp" required="required" />
-		<div class="error-box" style="display:none;" id="invalidFile"><span class="box-icon"></span>Massima dimensione consentita: 1Mb</div>
-		<div class="font-small">Forniscici un documento che attesti la tua affiliazione presso un istituto di ricerca o iscrizione all\'Università, per gli studenti.</div></div>'
-		*/
-$txt .=		'<div id="cvdiv" class = "col">Inserisci un <strong>breve</strong> testo/CV per darci un\'idea delle tue competenze <span style = "color:gray;"> <em>[max 1000 caratteri]</em>
+        $txt .=		'<div id="cvdiv" class = "col">Inserisci un <strong>breve</strong> testo/CV per darci un\'idea delle tue competenze <span style = "color:gray;"> <em>[max 1000 caratteri]</em>
 		<textarea id="cv" name="cv" cols="100" rows="10" maxlength="1000" placeholder="Una breve descrizione delle tue competenze">'.$cv.'</textarea></div><br />';
 		}
 	else if ($tipo == 2)
@@ -463,6 +474,7 @@ function as_conferma_dati($t)
 	// Importante per gli apostrofi!!! (es. in cognomi e affiliazioni)
 	$_POST = stripslashes_deep($_POST);
 	$page_ID = get_the_ID();
+	$PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRIsoci/";
 
 	$nome = isset($_POST['nome']) ? $_POST['nome'] : "";
 	$cognome = isset($_POST['cognome']) ? $_POST['cognome'] : "";
@@ -471,13 +483,16 @@ function as_conferma_dati($t)
 	$affiliazione = isset($_POST['affiliazione']) ? $_POST['affiliazione'] : "";
 	$citta = isset($_POST['citta']) ? $_POST['citta'] : "";
 	$prova_pagamento = isset($_FILES['prova_pagamento']) ? $_FILES['prova_pagamento']['name'] : "";
-	$ambito = isset($_POST['ambito']) ? $_POST['ambito'] : -1;
+	$cip2010 = isset($_POST['cip2010']) ? $_POST['cip2010'] : -1;
+	$cip2010_desc = isset($_POST['cip2010_desc']) ? $_POST['cip2010_desc'] : "";
 	$professione = isset($_POST['professione']) ? $_POST['professione'] : "";
 	$t = isset($_POST['t']) ? (int)$_POST['t'] : -1;
 	$cv = isset($_POST['cv']) ? substr($_POST['cv'], 0, 1000) : "";
 	$candidatura = isset($_POST['candidatura']) ? substr($_POST['candidatura'], 0, 1000) : "";
 	$revisore = isset($_POST['revisore']) ? true : false;
 	$vcode = isset($_POST['vcode']) ? (int)$_POST['vcode'] : as_build_volunteer_code($revisore);
+	$lat = isset($_POST['lat']) ? (float)$_POST['lat'] : 90;
+	$lng = isset($_POST['lng']) ? (float)$_POST['lng'] : 0;
 
 	// Verifichiamo il noCaptcha reCaptcha
 	if ($_SERVER["REQUEST_METHOD"] == "POST")
@@ -485,7 +500,7 @@ function as_conferma_dati($t)
 		$recaptcha = $_POST['g-recaptcha-response'];
 		if (!empty($recaptcha))
 			{
-			$cp = fopen($PLUGIN_BASE."/recaptcha.txt", "r");
+			$cp = fopen($PLUGIN_BASE."/recaptcha-secret.txt", "r");
 			$secret = trim(fgets($cp));
 			fclose($cp);
 			    
@@ -499,7 +514,7 @@ function as_conferma_dati($t)
 			if (!$res['success'])
 				{
 				return "<div class='error-box'><span class='box-icon'></span>Devi confermare di non essere un robot</div>".
-					as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, 
+					as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $lat, $lng, $prova_pagamento, $cip2010, $cip2010_desc, 
 						$professione, $cv, $candidatura, $vcode, "Torna indietro");
 				}
 			}
@@ -510,7 +525,7 @@ function as_conferma_dati($t)
 			        // ok, accetta;
 			    } else {
 			return "<div class='error-box'><span class='box-icon'></span>Devi confermare di non essere un robot</div>".
-				as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, 
+				as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $lat, $lng, $prova_pagamento, $cip2010, $cip2010_desc, 
 					$professione, $cv, $candidatura, $vcode, "Torna indietro");
 			    }
 			}
@@ -523,7 +538,7 @@ function as_conferma_dati($t)
 		if ($nome == "" || $cognome == "" || $email == "")
 				{
 				return "<div class='error-box'><span class='box-icon'></span>Tutti i campi devono essere completati</div>".
-				as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, 
+				as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $lat, $lng, $prova_pagamento, $cip2010, $cip2010_desc, 
 					$professione, $cv, $candidatura, $vcode, "Torna indietro");
 				}
 				
@@ -538,74 +553,14 @@ function as_conferma_dati($t)
 		}
 	else if ($t == 1)
 		{
-		if ($nome == "" || $cognome == "" || $email == "" || $codice_fiscale == "" || $affiliazione == "" || $ambito == -1 || 
+		if ($nome == "" || $cognome == "" || $email == "" || $codice_fiscale == "" || $affiliazione == "" || $cip2010 == -1 || 
 			$prova_pagamento == "" || $professione == "" || $citta == "")
 				{
 				return "<div class='error-box'><span class='box-icon'></span>Tutti i campi devono essere completati</div>".
-				as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, 
+				as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $lat, $lng, $prova_pagamento, $cip2010, $cip2010_desc, 
 					$professione, $cv, $candidatura, $vcode, "Torna indietro");
 				}
 		
-		// Rimosso 8/1/18		
-		// Se stiamo gestendo l'iscrizione di un socio, controlliamo la prova di affiliazione
-		/*try {
-			// Controlliamo che non ci siano stati errori durante l'upload
-			if (!isset($_FILES['prova']['error']) || is_array($_FILES['prova']['error']))
-				{
-				throw new RuntimeException('Errore  interno - parametri non validi.');
-				}
-	
-			switch ($_FILES['prova']['error']) 
-				{
-				// Tutto OK
-				case UPLOAD_ERR_OK:
-					break;
-				// Niente file
-				case UPLOAD_ERR_NO_FILE:
-					throw new RuntimeException("E' richiesta una prova di affiliazione");
-				// Nota: questo semplicemente controlla che non abbiamo caricato un file > max_file_size in php.ini
-				// quindi in teoria non dovremmo mai essere in questa situazione
-				// Vedi anche: http://stackoverflow.com/questions/8300331/php-whats-the-point-of-upload-err-ini-size
-				case UPLOAD_ERR_INI_SIZE:
-				case UPLOAD_ERR_FORM_SIZE:
-					throw new RuntimeException('Il file caricato è troppo grande.');
-				default:
-					throw new RuntimeException('Errore interno.');
-				}
-				
-			if ($_FILES['prova']['size'] > 1000000)
-				{
-				throw new RuntimeException('La prova di affiliazione deve essere al massimo 1Mb.');
-				}
-	
-			// Controlliamo il MIME Type
-			$finfo = finfo_open(FILEINFO_MIME_TYPE);
-			$allowedMIME = array(
-				    'jpg' => 'image/jpeg',
-				    'png' => 'image/png',
-				    'gif' => 'image/gif',
-				    'pdf' => 'application/pdf');
-				    
-			$MIME = finfo_file($finfo, $_FILES['prova']['tmp_name']);
-				    
-			if (false === $ext = array_search($MIME, $allowedMIME, true))
-				{
-				throw new RuntimeException('La prova di affiliazione deve essere un\'immagine o un file PDF.');
-				}
-
-			if (!move_uploaded_file($_FILES['prova']['tmp_name'], sprintf('wp-content/uploads/prove-affiliazione/%s.%s', $username, $ext)))
-				{
-				throw new RuntimeException('Errore interno - impossibile copiare la prova di affiliazione, 
-					<a href="mailto:webmaster@airicerca.org" target="_blank">contattare l\'amministratore del sito</a>.');
-				}
-			}
-		catch (RuntimeException $e)
-			{
-			return "<div class='error-box'><span class='box-icon'></span>".$e->getMessage()."</div>".
-				as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, 
-					$professione, $cv, $candidatura, "Torna indietro");
-			}*/
-
 		// controlliamo la prova di pagamento
 		try {
 			// Controlliamo che non ci siano stati errori durante l'upload
@@ -661,11 +616,10 @@ function as_conferma_dati($t)
 		catch (RuntimeException $e)
 			{
 			return "<div class='error-box'><span class='box-icon'></span>".$e->getMessage()."</div>".
-				as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, 
+				as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $lat, $lng, $prova_pagamento, $cip2010, $cip2010_desc, 
 					$professione, $cv, $candidatura, $vcode, "Torna indietro");
 			}
 
-		$ambiti = array("Scienze Mediche/Biologiche", "Scienze Chimiche/Fisiche/Geologiche", "Scienze Umane", "Scienze Giuridiche/Economiche", "Ingegneria", "Architettura/Design", "Matematica");
 
 		$txt = "<div style='line-height:2em'>Prima di terminare l'iscrizione ad AIRIcerca come socio, conferma che tutti i dati inseriti siano corretti <br />
 			<form action='".get_site_url()."/?page_id=".$page_ID."&tp=1&ps=3' method='POST'>
@@ -675,7 +629,7 @@ function as_conferma_dati($t)
 			<strong>e-mail:</strong> $email<input type='hidden' name='email' value='$email' /><br />
 			<strong>Professione:</strong> $professione<input type='hidden' name='professione' value=\"$professione\"><br />
 			<strong>Affiliazione:</strong> $affiliazione<input type='hidden' name='affiliazione' value=\"$affiliazione\" /><br />
-			<strong>Città:</strong> $citta<input type='hidden' name='citta' value=\"$citta\" /><br />
+			<strong>Città:</strong> $citta<input type='hidden' name='citta' value=\"$citta\" /><input type='hidden' name='lat' value=\"$lat\" /><input type='hidden' name='lng' value=\"$lng\" /><br />
 			<strong>Prova di pagamento:</strong> $prova_pagamento<input type='hidden' name='prova_pagamento' value=\"$prova_pagamento\" /><br />";
 		if ($vcode !== 0) {
 		    $sfx = ' ';
@@ -685,7 +639,7 @@ function as_conferma_dati($t)
 		}
 		if ($professione != "Studente")
 			{
-			$txt .= "<strong>Ambito:</strong> $ambiti[$ambito]<input type='hidden' name='ambito' value='$ambito' /><br />
+			$txt .= "<strong>Ambito:</strong> $cip2010_desc<input type='hidden' name='cip2010' value='$cip2010' /><input type='hidden' name='cip2010_desc' value='$cip2010_desc' /><br />
 			<strong>Il tuo CV</strong>:<br />
 			<textarea name='cv' readonly='readonly' cols='100' rows='10'>".$cv."</textarea>";
 			}
@@ -700,7 +654,7 @@ function as_conferma_dati($t)
 		if ($nome == "" || $cognome == "" || $email == "" || $codice_fiscale == "" || $prova_pagamento == "")
 				{
 				return "<div class='error-box'><span class='box-icon'></span>Tutti i campi devono essere completati</div>".
-				as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, 
+				as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $lat, $lng, $prova_pagamento, $cip2010, $cip2010_desc, 
 					$professione, $cv, $candidatura, $vcode, "Torna indietro");
 				}
 
@@ -729,11 +683,11 @@ function as_conferma_dati($t)
 	else
 		{
 		return "<div class='error-box'><span class='box-icon'></span>Errore interno</div>".
-			as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, 
+			as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $lat, $lng, $prova_pagamento, $cip2010, $cip2010_desc, 
 			    $professione, $cv, $candidatura, $vcode, "Torna indietro");
 		}
 			
-	$txt .= as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, 
+	$txt .= as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $lat, $lng, $prova_pagamento, $cip2010, $cip2010_desc, 
 	    $professione, $cv, $candidatura, $vcode, "Modifica i dati");
 		
 	return $txt;
@@ -755,12 +709,15 @@ function as_add_user($t)
 	$citta = isset($_POST['citta']) ? $_POST['citta'] : "";
 	//$prova = isset($_POST['prova']) ? $_POST['prova'] : "";
 	$prova_pagamento = isset($_POST['prova_pagamento']) ? $_POST['prova_pagamento'] : "";
-	$ambito = isset($_POST['ambito']) ? $_POST['ambito'] : -1;
+	$cip2010 = isset($_POST['cip2010']) ? $_POST['cip2010'] : -1;
+	$cip2010_desc = isset($_POST['cip2010_desc']) ? $_POST['cip2010_desc'] : "";
 	$professione = isset($_POST['professione']) ? $_POST['professione'] : "";
 	$cv = isset($_POST['cv']) ? substr(multiline_sanitize($_POST['cv']), 0, 1000) : "";
 	$candidatura = isset($_POST['candidatura']) ? substr(multiline_sanitize($_POST['candidatura']), 0, 1000) : "";
 	$vcode = isset($_POST['vcode']) ? (int)$_POST['vcode'] : 0;
 	$t = isset($_GET['tp']) ? (int)$_GET['tp'] : -1;
+	$lat = isset($_POST['lat']) ? (float)$_POST['lat'] : 90;
+	$lng = isset($_POST['lng']) ? (float)$_POST['lng'] : 0;
 	
 	// Controlliamo di avere tutti i dati
 	if ($t==-1)
@@ -779,7 +736,7 @@ function as_add_user($t)
 		if ($professione != "Studente")
 			{
 			if ($nome == "" || $cognome == "" || $email == "" || $codice_fiscale == "" || $affiliazione == "" || // $cv == "" || 
-				$prova_pagamento == "" || $ambito == -1 || $professione == "" || $citta == "")
+				$prova_pagamento == "" || $cip2010 == -1 || $professione == "" || $citta == "")
 				die("Errore interno - 3");
 			}
 		else
@@ -912,7 +869,10 @@ function as_add_user($t)
 								'affiliazione'	=> stripslashes($affiliazione),
 								'prova_pagamento'=> $username.".".strtolower($extprova_pagamento),
 								'citta'		=> $citta,
-								'ambito'	=> $ambito,
+			                    'lat'       => $lat,
+			                    'lng'       => $lng,
+								'cip2010'	=> $cip2010,
+			                    'cip2010_desc'	=> $cip2010_desc,
 								'professione'	=> $professione,
 								'cv'		=> $cv,
 								'candidatura'	=> $candidatura,
@@ -925,6 +885,8 @@ function as_add_user($t)
 								'candidatura'	=> $candidatura,
 								'prova_pagamento' => $username.".".strtolower($extprova_pagamento),
 								'citta'		=> $citta,
+			                    'lat'       => $lat,
+			                    'lng'       => $lng,
 								'tipo_utente'	=> $t));
 			}
 
@@ -994,7 +956,7 @@ function as_create_username($nome, $cognome)
 
 	
 // Crea un form per tornare alla pagina di inserimento dati (in seguito ad errore o per modifica dati)
-function as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $prova_pagamento, $ambito, $professione, $cv, $candidatura, $vcode, $buttonTxt)
+function as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $lat, $lng, $prova_pagamento, $cip2010, $cip2010_desc, $professione, $cv, $candidatura, $vcode, $buttonTxt)
 	{
 	$page_ID = get_the_ID();
 	$txt = "<form action='".get_site_url()."/?page_id=".$page_ID."&tp=$t&ps=1' method='POST'>
@@ -1006,8 +968,11 @@ function as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliaz
 	<input type=\"hidden\" name=\"email\" value=\"$email\" /><br />
 	<input type=\"hidden\" name=\"affiliazione\" value=\"$affiliazione\" /><br />
 	<input type=\"hidden\" name=\"citta\" value=\"$citta\" /><br />
+    <input type=\"hidden\" name=\"lat\" value=\"$lat\" /><br />
+    <input type=\"hidden\" name=\"lng\" value=\"$lng\" /><br />
 	<input type=\"hidden\" name=\"prova_pagamento\" value=\"$prova_pagamento\" /><br />
-	<input type=\"hidden\" name=\"ambito\" value=\"$ambito\" /><br />
+	<input type=\"hidden\" name=\"cip2010\" value=\"$cip2010\" /><br />
+    <input type=\"hidden\" name=\"cip2010_desc\" value=\"$cip2010_desc\" /><br />
 	<input type=\"hidden\" name=\"professione\" value=\"$professione\" /><br />
 	<input type=\"hidden\" name=\"cv\" value=\"$cv\" /><br />
 	<input type=\"hidden\" name=\"candidatura\" value=\"$candidatura\" /><br />
@@ -1132,7 +1097,17 @@ function as_gestione_soci($atts)
 			$prova_pag = "";
 			
 		if (in_array($dati_personali['professione'], array('Ricercatore', 'Dottorando')))
-			$professione = $dati_personali['professione']." - ".$ambiti[$dati_personali["ambito"]];
+		{
+		    if (array_key_exists("cip2010_desc", $dati_personali))
+		    {
+		        $professione = $dati_personali['professione']." - ".$dati_personali["cip2010_desc"];
+		    }
+		    else if (array_key_exists("ambito", $dati_personali)) 
+		    {
+			     $professione = $dati_personali['professione']." - ".$ambiti[$dati_personali["ambito"]];
+		    }
+		    
+		}
 		else
 			$professione = $dati_personali['professione'];
 
@@ -1190,12 +1165,13 @@ function as_gestione_soci($atts)
 function as_reCAPTCHA()
 	{
 	$PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRIsoci/";
-    $cp = fopen($PLUGIN_BASE."/recaptcha.txt", "r");
+    $cp = fopen($PLUGIN_BASE."/recaptcha-sitekey.txt", "r");
     $key = trim(fgets($cp));
     fclose($cp);
 	    
 	return '<div class="g-recaptcha" style="margin:auto" data-sitekey="'.$key.'"></div>';
 	}
+
 
 //[privacyblurb]
 function as_print_privacy_blurb()
@@ -1275,24 +1251,11 @@ function as_get_tessera()
 //	https://www.airicerca.org/wp-content/plugins/AIRIsoci/tessera.php?id=901
 	}
 
-function multiline_sanitize($str)
-	{
-	    return (implode("\n", array_map( 'sanitize_text_field', explode("\n", $str))));
-	}
+// function multiline_sanitize($str)
+// 	{
+// 	    return (implode("\n", array_map( 'sanitize_text_field', explode("\n", $str))));
+// 	}
 
-//[privacyblurb]
-function print_privacy_blurb()
-    {
-        return '<div class="font-small"><strong>INFORMAZIONI SULLA PRIVACY: </strong>Tutti i dati personali forniti saranno trattati nel rispetto del D.Lgs. 30 giugno 2003, n. 196 '.
-       	    'recante il Codice in materia di protezione dei dati personali. I dati personali verranno trattati elettronicamente e saranno conservati all\'interno del database '.
-       	    'digitale a tal uopo predisposto. Tutti i dati personali saranno trattati rispettando le misure minime di sicurezza prescritte dalla Legge, in modo da ridurne al '.
-       	    'minimo i rischi di distruzione o perdita, di accesso non autorizzato o di trattamento non conforme alle finalità della raccolta. In relazione al trattamento dei '.
-       	    'dati personali, il socio iscritto può esercitare i diritti riconosciutigli dall\'art. 7 del D.Lgs. 196/2003, e dunque, il diritto di accedere ai dati, il diritto '.
-       	    'di ottenere rettifica e/o aggiornamento e/o integrazione dei dati, il diritto di ottenere cancellazione/trasformazione".</div>';
-    }
-
-add_shortcode('privacy-blurb', 'print_privacy_blurb');
-	
 add_shortcode('iscrizione-AIRIcerca', 'as_dispatcher_iscrizione');
 add_shortcode('gestione-soci', 'as_gestione_soci');
 add_shortcode('as_reCAPTCHA', 'as_reCAPTCHA');

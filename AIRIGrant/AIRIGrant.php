@@ -132,7 +132,7 @@ function AIRIGrantRevisori()
 		get_user_meta($u->user_id, "last_name", true). "</strong> - <span style='font-size:0.7em'><a href = 'mailto:". 
 		$ud->user_email . "'>" . $ud->user_email . "</a></span> <button id='rem_revisore_".$u->user_id.
 		"' style='padding:0.2em; font-size:0.7em'>Elimina</button><br />".
-		"<span>Professione: $professione</span>".
+		"<span style='margin-left: 3em;'>$professione</span><br />".
 		"<span style='margin-left: 3em;'>". get_user_meta($u->user_id, "revisoreExperience", true) ."</span></div>";
 		}
 		
