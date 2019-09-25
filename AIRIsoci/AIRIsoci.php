@@ -320,7 +320,7 @@ function as_add_mailchimp($tipo, $nome, $cognome, $email) {
     $fname = '';
     
     if ($tipo == 0)
-        $fname = $PLUGIN_BASE."/mailchimp-amici.txt";
+        $fname = $PLUGIN_BASE."/mchimp-amici.txt";
     else 
         $fname = $PLUGIN_BASE."/mchimp.txt";
     
