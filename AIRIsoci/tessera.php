@@ -107,7 +107,10 @@ imagettftext($im, 43, 0, 780, 602, $numcolor, $font_file, $numero_tessera);
 #/* Output the image with headers */
 #//header('Content-type: application/pdf');
 
-$out = (int)$_GET['out'];
+$out=0;
+
+if (array_key_exists('out', $_GET))
+    $out = (int)$_GET['out'];
 
 if ($out == 1)
 	{

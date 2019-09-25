@@ -3,7 +3,7 @@
  * Plugin Name: AIRIsoci
  * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Plugin per la gestione dei soci di AIRIcerca.
- * Version: 1.1.1
+ * Version: 1.1.2
  * Author: Nicola Romanò
  * Author URI: https://github.com/nicolaromano
  * License: GPL3
@@ -51,7 +51,7 @@ function as_load_custom_scripts()
 	$PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRIsoci/";
 	$page_ID = get_the_ID();
 	//echo $page_ID;
-	if ($page_ID == 6822) // Pagina iscrizione soci + amici
+	if ($page_ID == 6822 || $page_ID == 13583) // Pagina iscrizione soci + amici, modifica dati utente
 		{		    
 		wp_enqueue_script('reCAPTCHA', 'https://www.google.com/recaptcha/api.js?hl=it', array(), '1', true);
 		
@@ -300,43 +300,60 @@ function as_accetta_candidatura_callback()
 	unlink(WP_PLUGIN_DIR."/AIRISoci/tmp/$numero_tessera.jpg");
 
 	// Aggiungiamo l'utente alla lista di MailChimp
-	// Da: http://stackoverflow.com/q/30481979/176923
-	// Leggiamolo da file
-	$keyfile = fopen($PLUGIN_BASE."/mchimp.txt", "r");
-	$apikey = trim(fgets($keyfile));
-	$listID = trim(fgets($keyfile));
-	fclose($keyfile);
-
-	$auth = base64_encode('user:'.$apikey);
-
-	$data = array(
-		'apikey'	=> $apikey,
-		'email_address'	=> $to,
-		'status'	=> 'subscribed',
-		'merge_fields'	=> array(
-				'FNAME' => $nome,
-				'LNAME' => $cognome)
-		);
-	$json_data = json_encode($data);
-
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_URL, 'https://us11.api.mailchimp.com/3.0/lists/'.$listID.'/members/');
-	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json',
-						'Authorization: Basic '.$auth));
-	curl_setopt($ch, CURLOPT_USERAGENT, 'PHP-MCAPI/2.0');
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-	curl_setopt($ch, CURLOPT_POST, true);
-	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-	curl_setopt($ch, CURLOPT_POSTFIELDS, $json_data);
-	
 	// Non fare niente se si tratta di un test
 	if (strpos(get_site_url(), 'localhost') !== false) {
 	    $body .= "<BR /><BR /><BR /> Mailchimp list=".$listID." key=".$apikey;
-	} else { $result = curl_exec($ch); }
-		
+	} else { 
+	    as_add_mailchimp(1, $nome, $cognome, $to);
+	}
+	 		
 	wp_die();
 	}
+	
+// Aggiungiamo l'utente alla lista di MailChimp
+// Da: http://stackoverflow.com/q/30481979/176923
+function as_add_mailchimp($tipo, $nome, $cognome, $email) {
+    
+    $PLUGIN_BASE = $_SERVER['DOCUMENT_ROOT']."/wp-content/plugins/AIRIsoci/";
+    
+    // Leggiamo i segreti da file
+    $fname = '';
+    
+    if ($tipo == 0)
+        $fname = $PLUGIN_BASE."/mailchimp-amici.txt";
+    else 
+        $fname = $PLUGIN_BASE."/mchimp.txt";
+    
+    $keyfile = fopen($fname, "r");
+    $apikey = trim(fgets($keyfile));
+    $listID = trim(fgets($keyfile));
+    fclose($keyfile);
+    
+    $auth = base64_encode('user:'.$apikey);
+    
+    $data = array(
+        'apikey'	=> $apikey,
+        'email_address'	=> $email,
+        'status'	=> 'subscribed',
+        'merge_fields'	=> array(
+            'FNAME' => $nome,
+            'LNAME' => $cognome)
+    );
+    $json_data = json_encode($data);
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, 'https://us11.api.mailchimp.com/3.0/lists/'.$listID.'/members/');
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json',
+        'Authorization: Basic '.$auth));
+    curl_setopt($ch, CURLOPT_USERAGENT, 'PHP-MCAPI/2.0');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $json_data);
+    
+    $result = curl_exec($ch);
+}
 	
 function as_dati_personali($tipo)
 	{
@@ -400,7 +417,7 @@ function as_dati_personali($tipo)
 		
 		$txt .= '<div class="col" style="width: 200px; text-align: right;" required="required">Professione</div>
 			<div class="col nomargin" style="width: 500px; text-align: left;">
-			<select id="professione" name="professione" id="professione">';
+			<select id="professione" name="professione">';
 		for ($p=0; $p<count($professioni); $p++)
 				{
 				$sel = ($values[$p] == $professione) ? "selected = 'selected'" : "";
@@ -437,7 +454,7 @@ function as_dati_personali($tipo)
 		<input type="checkbox" name="revisore" value="true" '.$rev_checked.'> <strong>Revisore</strong> &mdash; voglio aiutare con la revisione di abstracts e grants.</div>';
 		
 			
-        $txt .=		'<div id="cvdiv" class = "col">Inserisci un <strong>breve</strong> testo/CV per darci un\'idea delle tue competenze <span style = "color:gray;"> <em>[max 1000 caratteri]</em>
+        $txt .=		'<div id="cvdiv" class = "col">Inserisci un <strong>breve</strong> testo/CV per darci un\'idea delle tue competenze <span style = "color:gray;"> <em>[max 1000 caratteri]</em></span>
 		<textarea id="cv" name="cv" cols="100" rows="10" maxlength="1000" placeholder="Una breve descrizione delle tue competenze">'.$cv.'</textarea></div><br />';
 		}
 	else if ($tipo == 2)
@@ -451,14 +468,14 @@ function as_dati_personali($tipo)
 		$txt .= '<div class="col" style="width: 200px; text-align: right;">Professione</div>'.
 			'<div class="col nomargin" style="width: 500px; text-align: left;">'.
 			'<input id="professione" name="professione" required="required" size="50" type="text" value="'.$professione.'" /></div></div>';
-		$txt .= '<div>In che modo contribuirai ad AIRIcerca? <i>[max 1000 caratteri]</i><br /><textarea id="candidatura" name="candidatura" cols="100" rows="10" 
+		$txt .= '<div>In che modo contribuirai ad AIRIcerca? <span style = "color:gray;"> <em>[max 1000 caratteri]</em></span><br /><textarea id="candidatura" name="candidatura" cols="100" rows="10" 
 			maxlength="1000" required="required">'.$candidatura.'</textarea></div>';
 		
 		$rev_checked = as_check_volunteer($vcode, REVIEWER_BIT) ? "checked" : "";
 		
-		$txt .= '<div class="col" style="width: 200px; text-align: right;"><label for="volontariato">Volontariato</label></div>
+		$txt .= '<div class="col" style="width: 200px; text-align: right;"><label for="revisore">Volontariato</label></div>
 		<div class="col nomargin" style="width: 500px; text-align: left;">
-		<input type="checkbox" name="revisore" value="true" '.$rev_checked.'> <strong>Revisore</strong> &mdash; voglio aiutare con la revisione di abstracts e grants.</div>';
+		<input type="checkbox" id="revisore" name="revisore" value="true" '.$rev_checked.' /> <strong>Revisore</strong> &mdash; voglio aiutare con la revisione di abstracts e grants.</div>';
 		}
 
 	$txt .= '<div style="margin: auto; width: 305px; clear: both; margin-bottom: 1em;">'.do_shortcode('[as_reCAPTCHA]').'</div>
@@ -489,7 +506,7 @@ function as_conferma_dati($t)
 	$t = isset($_POST['t']) ? (int)$_POST['t'] : -1;
 	$cv = isset($_POST['cv']) ? substr($_POST['cv'], 0, 1000) : "";
 	$candidatura = isset($_POST['candidatura']) ? substr($_POST['candidatura'], 0, 1000) : "";
-	$revisore = isset($_POST['revisore']) ? true : false;
+	$revisore = isset($_POST['revisore']) ? $_POST['revisore'] : false;
 	$vcode = isset($_POST['vcode']) ? (int)$_POST['vcode'] : as_build_volunteer_code($revisore);
 	$lat = isset($_POST['lat']) ? (float)$_POST['lat'] : 90;
 	$lng = isset($_POST['lng']) ? (float)$_POST['lng'] : 0;
@@ -520,14 +537,9 @@ function as_conferma_dati($t)
 			}
 		else
 			{
-			// accettiamo nessun recaptcha se siamo sul sito di sviluppo
-			    if (strpos(get_site_url(), 'localhost') !== false) {
-			        // ok, accetta;
-			    } else {
 			return "<div class='error-box'><span class='box-icon'></span>Devi confermare di non essere un robot</div>".
 				as_hiddenFields($t, $nome, $cognome, $codice_fiscale, $email, $affiliazione, $citta, $lat, $lng, $prova_pagamento, $cip2010, $cip2010_desc, 
-					$professione, $cv, $candidatura, $vcode, "Torna indietro");
-			    }
+					$professione, $cv, $candidatura, $vcode, "Torna indietro");   
 			}
 		}
 		
@@ -821,39 +833,14 @@ function as_add_user($t)
 		wp_mail($to, $subject, $body, $headers);
 		
 		// Aggiungiamo l'utente alla lista di MailChimp
-		// Da: http://stackoverflow.com/q/30481979/176923
-		$f = fopen($PLUGIN_BASE."/mailchimp-amici.txt", "r");
-		$apikey = trim(fgets($f));
-		$listID = trim(fgets($f));
-		fclose($f);
-
-		$auth = base64_encode( 'user:'.$apikey );
-
-		$data = array(
-			'apikey'	=> $apikey,
-			'email_address'	=> $to,
-			'status'	=> 'subscribed',
-			'merge_fields'	=> array(
-					'FNAME' => $nome,
-					'LNAME' => $cognome)
-			);
-		$json_data = json_encode($data);
-		
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, 'https://us11.api.mailchimp.com/3.0/lists/'.$listID.'/members/');
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json',
-							'Authorization: Basic '.$auth));
-		curl_setopt($ch, CURLOPT_USERAGENT, 'PHP-MCAPI/2.0');
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-		curl_setopt($ch, CURLOPT_POST, true);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $json_data);
 		// Non fare niente se si tratta di un test
 		if (strpos(get_site_url(), 'localhost') !== false) {
 		    $body .= "<BR /><BR /><BR /> Mailchimp list=".$listID." key=".$apikey;
-		} else { $result = curl_exec($ch); }
+		} else {
+		    as_add_mailchimp($t, $nome, $cognome, $to);
 		}
+		
+	}
 	// SOCIO
 	else if ($t == 1 || $t == 2)
 		{
@@ -1263,4 +1250,7 @@ add_shortcode('as_privacy-blurb', 'as_print_privacy_blurb');
 add_shortcode('as-lista-soci', 'as_lista_soci');
 add_shortcode('as-profilo', 'as_profilo_utente');
 add_shortcode('as-get-tessera', 'as_get_tessera');
+
+include 'modifica_utente.php';
+
 ?>
