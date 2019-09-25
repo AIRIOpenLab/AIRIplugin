@@ -147,7 +147,7 @@ function as_modifica_utente() {
     	<div style="text-align: center;"><input type="submit" value="Modifica dati" /></div>
     	<input type="hidden" name="t" value="'.$t.'" />
         </div>
-    	</form><br />'.do_shortcode("[as_privacy-blurb]");
+    	</form><br />';
     }
     
     return $txt;

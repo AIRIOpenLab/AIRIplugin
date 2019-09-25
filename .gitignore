@@ -1,4 +1,5 @@
 .project
+.settings/
 AIRIbandi/AIRIbandi-insert.js
 AIRIbandi/AIRIbandi.js
 AIRIbandi/jquery.select-to-autocomplete.js
