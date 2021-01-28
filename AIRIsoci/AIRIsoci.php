@@ -3,7 +3,7 @@
  * Plugin Name: AIRIsoci
  * Plugin URI: https://github.com/AIRIOpenLab/AIRIplugin
  * Description: Plugin per la gestione dei soci di AIRIcerca.
- * Version: 1.1.2
+ * Version: 1.1.3
  * Author: Nicola Romanò
  * Author URI: https://github.com/nicolaromano
  * License: GPL3
@@ -79,8 +79,8 @@ function as_load_custom_scripts()
 		}
 	else if ($page_ID == 7336) // Gestione soci
 		{
-		wp_enqueue_style('DataTablesCSS', 'http://cdn.datatables.net/1.10.7/css/jquery.dataTables.css');
-		wp_enqueue_script('DataTables', 'http://cdn.datatables.net/1.10.7/js/jquery.dataTables.js', array("jquery"), '1', true);
+		wp_enqueue_style('DataTablesCSS', 'https://cdn.datatables.net/1.10.7/css/jquery.dataTables.css');
+		wp_enqueue_script('DataTables', 'https://cdn.datatables.net/1.10.7/js/jquery.dataTables.js', array("jquery"), '1', true);
 		wp_enqueue_script('initDataTable', plugins_url('gestione-soci.js', __FILE__ ), array("jquery"), '1', true);
 		wp_localize_script('initDataTable', 'DataTablesLoadData', array('ajaxURL' => admin_url('admin-ajax.php')));
 		}
@@ -271,15 +271,16 @@ function as_accetta_candidatura_callback()
 	$subject = "Finalizzazione iscrizione ad AIRIcerca!";
 	$body = "<div style='text-align:center'><img src='https://www.airicerca.org/wp-content/uploads/2014/03/airi-logo-256x62.png' /></div><br />
 		Congratulazioni $nome $cognome, la tua candidatura come socio di AIRIcerca è stata accettata!<br />
-		<hr />
-		In allegato a questa email trovi la tua tessera di socio di AIRIcerca, pronta per essere stampata in formato biglietto da visita (85mm x 55mm).<br />
+		<hr /><br />".
+//		In allegato a questa email trovi la tua tessera di socio di AIRIcerca, pronta per essere stampata in formato biglietto da visita (85mm x 55mm).<br />
 
-		Ti abbiamo inoltre aggiunto alla mailing list dei soci, che viene usata esclusivamente per comunicazioni riguardanti l'Associazione.<br /> 
+		"Ti abbiamo inoltre aggiunto alla mailing list dei soci, che viene usata esclusivamente per comunicazioni riguardanti l'Associazione.<br /> 
 
 		Il tuo nome utente per accedere alla sezione soci di AIRIcerca è: <b>$username</b>.<br />
 		Puoi scegliere una password visitando il seguente indirizzo:<br />
 		<a href='$confAddress'>$confAddress</a><br />
 		
+		Il tuo numero di tessera è: <strong>".$res[0]->num."</strong><br/>
 		Il team di AIRIcerca.
 		<hr />
 		Vuoi aiutare AIRIcerca? Puoi <a href='https://www.airicerca.org/collabora-con-noi/' target='_blank'>collaborare</a> con noi 
@@ -998,20 +999,31 @@ function as_gestione_soci($atts)
 		}
 
 	$ids = implode(",", $ids);
-	
+		
 	$utenti = $wpdb->get_results("SELECT t_users.ID id, t_users.user_login username, t_users.user_email email, 
-			DATE_FORMAT(t_users.user_registered, '%d %b %y') data_registrazione, 
-			DATE_FORMAT(t_users.user_registered, '%Y%m%d') data_registrazione_sort, 
-			DATEDIFF(NOW(), t_users.user_registered) giorni_reg, membership.membership_id livello, membership.enddate fine_pagamento 
-			FROM
-			wp_users AS t_users 
-			LEFT JOIN 
-			wp_pmpro_memberships_users membership ON membership.user_id = t_users.ID WHERE t_users.ID IN ($ids) ORDER BY t_users.ID ASC");
-
-	$nomi = $wpdb->get_results("SELECT meta_value nome FROM `wp_usermeta` WHERE meta_key LIKE 'first_name' AND user_id IN ($ids) ORDER BY user_id ASC");
-	$cognomi = $wpdb->get_results("SELECT meta_value cognome FROM `wp_usermeta` WHERE meta_key LIKE 'last_name' AND user_id IN($ids) ORDER BY user_id ASC");
-	$tessere = $wpdb->get_results("SELECT user_id, GROUP_CONCAT( (CASE WHEN meta_key = 'card_number' THEN meta_value ELSE '' END) SEPARATOR '') 'tessera'
-		FROM wp_usermeta WHERE user_ID IN($ids) GROUP BY user_id ORDER BY user_id ASC");
+		usermeta_name.nome nome,
+		usermeta_surname.cognome cognome,
+		usermeta_card.tessera tessera,
+		DATE_FORMAT(t_users.user_registered, '%d %b %y') data_registrazione, 
+		DATE_FORMAT(t_users.user_registered, '%Y%m%d') data_registrazione_sort, 
+		DATEDIFF(NOW(), t_users.user_registered) giorni_reg, membership.membership_id livello, membership.enddate fine_pagamento 
+		FROM
+		wp_users AS t_users 
+		LEFT JOIN 
+		wp_pmpro_memberships_users membership 
+		ON membership.user_id = t_users.ID 
+		LEFT JOIN
+		(SELECT user_id, meta_value nome FROM `wp_usermeta` WHERE meta_key LIKE 'first_name' AND user_id IN($ids)) usermeta_name
+		ON usermeta_name.user_id = t_users.ID 
+		LEFT JOIN
+		(SELECT user_id, meta_value cognome FROM `wp_usermeta` WHERE meta_key LIKE 'last_name' AND user_id IN($ids)) usermeta_surname
+		ON usermeta_surname.user_id = t_users.ID 
+		LEFT JOIN
+		(SELECT user_id, GROUP_CONCAT( (CASE WHEN meta_key = 'card_number' THEN meta_value ELSE '' END) SEPARATOR '') 'tessera'
+		FROM wp_usermeta WHERE user_ID IN($ids) GROUP BY user_id) usermeta_card
+		ON usermeta_card.user_id = t_users.ID 
+		WHERE t_users.ID IN ($ids) ORDER BY t_users.ID ASC");
+	
 	$txt = "";
 
 	$txt .= "<div style='text-align:center; margin:0.5em;'>La conferma di pagamento o l'accettazione della candidatura attivano l'iscrizione fino al: <strong>".$endsubShort."</strong></div><br />";
@@ -1029,6 +1041,7 @@ function as_gestione_soci($atts)
 		<thead>
 			<tr>
 			<th>ID</th>
+
 			<th>Nome</th>
 			<th>e-mail</th>
 			<th>Tipo</th>
@@ -1098,9 +1111,8 @@ function as_gestione_soci($atts)
 		else
 			$professione = $dati_personali['professione'];
 
-		if ($tessere[$i]->tessera != "")
-			$tessera = '<a title="Mostra tessera" target="_blank" href="'.plugins_url('tessera.php?id='.$u->id, __FILE__ ).'">'.$tessere[$i]->tessera.'</a>';
-//$tessera = $u->tessera;
+		if ($u->tessera != "")
+			$tessera = '<a title="Mostra tessera" target="_blank" href="'.plugins_url('tessera.php?id='.$u->id, __FILE__ ).'">'.$u->tessera.'</a>';
 		else
 			$tessera = "Non generato";
 			
@@ -1125,7 +1137,7 @@ function as_gestione_soci($atts)
 		
 		$txt .= "<tr id='row_$u->id'>
 			<td>$u->id</td>
-			<td>".$nomi[$i]->nome." ".$cognomi[$i]->cognome."</td>
+			<td>".$u->nome." ".$u->cognome."</td>
 			<td>$u->email</td>
 			<td>$livello</td>
 			<td>".$professione."</td>
